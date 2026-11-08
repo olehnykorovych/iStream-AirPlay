@@ -7,8 +7,9 @@ using System.IO;
 
 namespace IStream
 {
-    // Ikona aplikacji: telefon + fale transmisji. Domyślnie czarny kwadrat z białym znakiem;
-    // inverted = biały kwadrat z czarnym znakiem (na czarnym pasku bocznym).
+    // App icon: an open circle that runs, in one line, into the stem of a lowercase "i", with the dot above.
+    // Default: graphite iOS-style tile with a white mark. inverted: light tile with a dark mark
+    // (used on the dark sidebar so the icon doesn't disappear into it).
     static class IconArt
     {
         public static Bitmap Draw(int size) { return Draw(size, false); }
@@ -19,33 +20,45 @@ namespace IStream
             using (var g = Graphics.FromImage(bmp))
             {
                 g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 g.Clear(Color.Transparent);
-                float s = size;
-                Color back = inverted ? Color.FromArgb(0xFA, 0xFA, 0xFA) : Color.FromArgb(0x0A, 0x0A, 0x0A);
-                Color glyph = inverted ? Color.FromArgb(0x0A, 0x0A, 0x0A) : Color.White;
+                float s = size, u = s / 100f;   // drawn on a 100 x 100 grid
 
-                using (var bg = RoundRect(new RectangleF(0, 0, s - 1, s - 1), s * 0.22f))
+                Color top = inverted ? Color.FromArgb(0xFF, 0xFF, 0xFF) : Color.FromArgb(0x2B, 0x2B, 0x2E);
+                Color bottom = inverted ? Color.FromArgb(0xE5, 0xE5, 0xEA) : Color.FromArgb(0x0A, 0x0A, 0x0B);
+                Color glyph = inverted ? Color.FromArgb(0x11, 0x11, 0x11) : Color.White;
+
+                var tile = new RectangleF(0, 0, s - 1, s - 1);
+                using (var bg = RoundRect(tile, s * 0.225f))
                 {
-                    using (var br = new SolidBrush(back)) g.FillPath(br, bg);
-                    if (!inverted)   // delikatna obwódka, żeby czarna ikona była widoczna na ciemnym pasku zadań
-                        using (var pen = new Pen(Color.FromArgb(90, 255, 255, 255), Math.Max(1f, s / 48f))) g.DrawPath(pen, bg);
+                    using (var br = new LinearGradientBrush(new PointF(0, 0), new PointF(0, s), top, bottom)) g.FillPath(br, bg);
+                    // hairline edge: keeps the dark tile visible on a dark taskbar, the light one on a light background
+                    Color edge = inverted ? Color.FromArgb(70, 0, 0, 0) : Color.FromArgb(60, 255, 255, 255);
+                    using (var pen = new Pen(edge, Math.Max(1f, s / 64f))) g.DrawPath(pen, bg);
                 }
 
-                float stroke = Math.Max(1.2f, s * 0.065f);
-                using (var pen = new Pen(glyph, stroke))
+                // thicker line at tray sizes so it stays readable
+                float sw = (s <= 24 ? 11f : s <= 40 ? 9.5f : 8f) * u;
+                // at tray sizes the dot sits higher and the stem is shorter, so the two don't merge into one blob
+                float dotY = s <= 24 ? 35f : 42f, stemTop = s <= 24 ? 60f : 56f;
+                const float r = 30f, a0 = 135f, a1 = 70f, stemX = 48f;
+                float ex = 50 + r * (float)Math.Cos(a1 * Math.PI / 180), ey = 50 + r * (float)Math.Sin(a1 * Math.PI / 180);
+
+                using (var path = new GraphicsPath())
+                using (var pen = new Pen(glyph, sw))
                 {
-                    pen.LineJoin = LineJoin.Round;
                     pen.StartCap = LineCap.Round;
                     pen.EndCap = LineCap.Round;
-
-                    var phone = new RectangleF(s * 0.20f, s * 0.17f, s * 0.31f, s * 0.66f);
-                    using (var p = RoundRect(phone, s * 0.07f)) g.DrawPath(pen, p);
-                    g.DrawLine(pen, s * 0.31f, s * 0.27f, s * 0.40f, s * 0.27f);
-
-                    float cx = s * 0.52f, cy = s * 0.50f;
-                    foreach (float r in new[] { s * 0.15f, s * 0.27f })
-                        g.DrawArc(pen, cx - r, cy - r, r * 2, r * 2, -42, 84);
+                    pen.LineJoin = LineJoin.Round;
+                    // open ring from the bottom-left, round over the top, down to the bottom...
+                    path.AddArc((50 - r) * u, (50 - r) * u, 2 * r * u, 2 * r * u, a0, 360f - (a0 - a1));
+                    // ...then curling up into the stem of the "i"
+                    path.AddBezier(ex * u, ey * u, (ex - 8) * u, (ey + 4) * u, stemX * u, (50 + r - 2) * u, stemX * u, (50 + r - 10) * u);
+                    path.AddLine(stemX * u, (50 + r - 10) * u, stemX * u, stemTop * u);
+                    g.DrawPath(pen, path);
                 }
+                float dot = sw * 0.72f;
+                using (var br = new SolidBrush(glyph)) g.FillEllipse(br, stemX * u - dot, dotY * u - dot, dot * 2, dot * 2);
             }
             return bmp;
         }

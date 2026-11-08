@@ -1,4 +1,6 @@
-# iStream
+<p align="center"><img src="docs/logo.png" width="112" alt="iStream logo"></p>
+
+<h1 align="center">iStream</h1>
 
 **Free, open-source AirPlay screen mirroring for Windows.** Mirror your iPhone or iPad to your PC with low latency, 60 FPS and full GPU decoding. One-click installer, no account, no ads.
 
