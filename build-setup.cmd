@@ -3,7 +3,7 @@ rem Builds the installer dist\iStream-Setup-%VER%.exe.
 rem Needs: build.cmd run first (build\iStream.ico) and the portable package dist\iStream-v%VER%-win-x64.zip.
 setlocal
 cd /d "%~dp0"
-if not defined VER set VER=1.3.0
+if not defined VER set VER=1.3.1
 set CSC=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe
 set ZIP=dist\iStream-v%VER%-win-x64.zip
 if not exist "%CSC%" (echo csc.exe not found & exit /b 1)

@@ -304,12 +304,30 @@ namespace IStream
     // A scrolling page that can be told not to move. WinForms scrolls a control into view whenever it gets focus,
     // which threw the settings page back to the top after a theme change rebuilt it. While Hold is set, focus
     // changes leave the scroll position alone; otherwise (Tab key) the normal scroll-into-view applies.
+    //
+    // It also scrolls live while the scrollbar thumb is dragged. WinForms only does that when Windows'
+    // "Show window contents while dragging" is on; with it off, the page jumped only after the thumb was released.
     sealed class ScrollPanel : Panel
     {
         public bool Hold;
+
         protected override Point ScrollToControl(Control activeControl)
         {
             return Hold ? DisplayRectangle.Location : base.ScrollToControl(activeControl);
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_VSCROLL = 0x0115, SB_THUMBPOSITION = 4, SB_THUMBTRACK = 5;
+            if (m.Msg == WM_VSCROLL && m.LParam == IntPtr.Zero && (m.WParam.ToInt64() & 0xFFFF) == SB_THUMBTRACK)
+            {
+                // handled like a thumb release at the current drag position (read from SIF_TRACKPOS)
+                m.WParam = (IntPtr)((m.WParam.ToInt64() & ~0xFFFFL) | SB_THUMBPOSITION);
+                base.WndProc(ref m);
+                Update();   // paint now, inside the drag loop
+                return;
+            }
+            base.WndProc(ref m);
         }
     }
 
