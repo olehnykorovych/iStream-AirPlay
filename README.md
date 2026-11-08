@@ -7,7 +7,11 @@
   <img src="docs/screenshots/stream-light.png" width="49%" alt="iStream in light mode">
 </p>
 
-<p align="center"><b><a href="../../releases/latest">⬇ Download the latest release</a></b> · <a href="README.pl.md">Polski opis</a></p>
+<p align="center">
+  <a href="https://github.com/olehnykorovych/iStream-AirPlay/releases/latest"><img src="https://img.shields.io/github/v/release/olehnykorovych/iStream-AirPlay?style=for-the-badge&label=Download%20for%20Windows&color=0A0A0A&labelColor=2E2E2E" alt="Download iStream for Windows"></a>
+  <br>
+  <sub>Windows 10 and 11 · 64-bit · free and open source</sub>
+</p>
 
 ---
 
