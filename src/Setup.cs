@@ -19,8 +19,8 @@ using Microsoft.Win32;
 
 [assembly: AssemblyTitle("iStream Setup")]
 [assembly: AssemblyProduct("iStream")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyFileVersion("1.3.0.0")]
 
 namespace IStream
 {
@@ -34,7 +34,7 @@ namespace IStream
     static class Product
     {
         public const string Name = "iStream";
-        public const string Version = "1.2.0";
+        public const string Version = "1.3.0";
         public const string Publisher = "olehnykorovych";
         public const string Url = "https://github.com/olehnykorovych/iStream-AirPlay";
         public const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\iStream";

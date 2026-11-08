@@ -690,7 +690,7 @@ namespace IStream
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
-            e.TextColor = Theme.Text;
+            e.TextColor = e.Item.Enabled ? Theme.Text : Theme.Faint;
             base.OnRenderItemText(e);
         }
 

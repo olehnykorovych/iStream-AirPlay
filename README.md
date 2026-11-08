@@ -19,6 +19,7 @@
 - **Fullscreen in one keystroke** (`Ctrl+Alt+F`), on the monitor of your choice, or automatically when your iPhone connects.
 - **Rotation** by 90°, 180° or 270°, done on the GPU.
 - **Settings never cut your stream.** Changes that need the iPhone to reconnect (resolution, frame rate, rotation…) are saved and applied when the stream ends. Hit *Apply now* if you want them immediately.
+- **Always ready in the background.** Closing the window keeps iStream in the tray, so your iPhone can mirror any time. With *Launch at Windows sign-in* it starts quietly in the tray. Quit from the tray icon's menu.
 - **Fast, reliable reconnects.** A new connection takes over instantly, and the server restarts itself if it ever crashes.
 - **One-click firewall fix** if Windows is blocking connections.
 - **Light, gray and dark themes** (black-on-white, graphite, white-on-black). By default it follows Windows.
@@ -54,6 +55,8 @@ That's it. The status changes to *Streaming* and the video window opens.
 | Toggle fullscreen | `Ctrl+Alt+F` or the *Fullscreen* button |
 | Rotate 90° | `Ctrl+Alt+R` or the phone tiles under *Rotation* |
 | Stop mirroring | Stop it on the iPhone (Control Center → Screen Mirroring → Stop Mirroring) |
+| Hide to the background | Close the window. iStream keeps running in the tray |
+| Open or quit from the tray | Click the iStream tray icon to open it; right-click for *Start/Stop server*, *Fullscreen* and *Quit iStream* |
 | Change quality | *Settings → Stream quality* (applied on the next connection) |
 
 <p align="center">
@@ -78,7 +81,8 @@ That's it. The status changes to *Streaming* and the video window opens.
 | Fullscreen monitor | Which screen fullscreen uses |
 | Name in AirPlay list | How the PC appears on your iPhone |
 | Language / Appearance | Interface language; light, gray, dark or same as Windows |
-| Start server with the app / Launch at Windows sign-in | Be ready without clicking anything |
+| Keep running in the background | Closing the window hides iStream to the tray instead of quitting (on by default) |
+| Start server with the app / Launch at Windows sign-in | Be ready without clicking anything; at sign-in iStream starts hidden in the tray |
 
 **Tip:** for the lowest latency, connect the PC by cable and keep the iPhone on 5 GHz Wi-Fi. If the picture stutters, drop to 1080p or 720p.
 
@@ -95,7 +99,9 @@ That's it. The status changes to *Streaming* and the video window opens.
 
 **I moved the folder (or switched from the ZIP to the installer) and now it can't connect.** Firewall rules are tied to the file path. Click *Fix firewall* again.
 
-**There are two tray icons.** One belongs to the engine. You can ignore it; iStream controls everything.
+**I can't find the tray icon.** Windows 11 hides new tray icons: click the **^** arrow next to the clock. To keep iStream visible, drag its icon onto the taskbar, or turn it on in *Settings → Personalization → Taskbar → Other system tray icons*.
+
+**There are two tray icons.** The second one belongs to the engine. You can ignore it; iStream controls everything.
 
 ## How it works
 

@@ -14,6 +14,7 @@
 - **Pełny ekran** skrótem `Ctrl+Alt+F`, na wybranym monitorze albo automatycznie po połączeniu.
 - **Obrót** o 90°, 180° i 270°, wykonywany na GPU.
 - **Zmiana ustawień nie przerywa streamu.** Zmiany wymagające ponownego połączenia są zapisywane i stosowane po zakończeniu streamu, a przycisk *Apply now* stosuje je od razu.
+- **Zawsze gotowy w tle.** Zamknięcie okna chowa iStream do zasobnika obok zegara, więc iPhone może się połączyć w każdej chwili. Z opcją *Launch at Windows sign-in* startuje po cichu w tle. Całkiem zamkniesz go z menu ikony w zasobniku (*Zamknij iStream*).
 - **Naprawa zapory jednym kliknięciem.**
 - **Jasny, szary i ciemny motyw** (biało-czarny, grafitowy i czarno-biały), domyślnie jak w Windows.
 - **6 języków**, w tym polski (Settings → Language).
@@ -38,6 +39,10 @@ Telefon i komputer muszą być w tej samej sieci.
 |---|---|
 | Pełny ekran | `Ctrl+Alt+F` |
 | Obrót o 90° | `Ctrl+Alt+R` albo kafelki z telefonem |
+| Schowaj do tła | Zamknij okno (X) |
+| Otwórz / zamknij z zasobnika | Kliknij ikonę iStream obok zegara; prawy przycisk → *Zamknij iStream* |
+
+Windows 11 chowa nowe ikony pod strzałką **^** obok zegara. Przeciągnij ikonę iStream na pasek zadań, żeby była zawsze widoczna.
 
 ## Gdy iPhone nie widzi komputera
 

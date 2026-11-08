@@ -20,7 +20,7 @@ using Microsoft.Win32;
 
 [assembly: System.Reflection.AssemblyTitle("iStream")]
 [assembly: System.Reflection.AssemblyProduct("iStream")]
-[assembly: System.Reflection.AssemblyVersion("1.2.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.3.0.0")]
 
 namespace IStream
 {
@@ -49,7 +49,7 @@ namespace IStream
                 if (!created && shotDir == null)
                 {
                     IntPtr h = Native.FindWindow(null, "iStream");
-                    if (h != IntPtr.Zero) { Native.ShowWindow(h, 9); Native.SetForegroundWindow(h); }
+                    if (h != IntPtr.Zero) Native.PostMessage(h, Native.WM_SHOWME, IntPtr.Zero, IntPtr.Zero);
                     return;
                 }
                 using (Graphics g = Graphics.FromHwnd(IntPtr.Zero)) Gfx.Scale = g.DpiX / 96f;
@@ -76,6 +76,8 @@ namespace IStream
         public bool AutoStart = true;
         public string Language = "en";
         public int ThemeMode = 0;        // 0 = like Windows, 1 = light, 2 = dark, 3 = gray
+        public bool Background = true;   // closing the window keeps iStream running in the tray
+        public bool TrayHintShown = false;
 
         static string AppData { get { return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData); } }
         public static string Folder { get { return Path.Combine(AppData, "iStream"); } }
@@ -112,6 +114,8 @@ namespace IStream
                         case "autostart": s.AutoStart = v == "1"; break;
                         case "lang": if (Array.IndexOf(L.Codes, v) >= 0) s.Language = v; break;
                         case "theme": s.ThemeMode = Clamp(ParseInt(v, 0), 0, 3); break;
+                        case "background": s.Background = v == "1"; break;
+                        case "trayhint": s.TrayHintShown = v == "1"; break;
                     }
                 }
                 if (s.DeviceName == "AirStream") s.DeviceName = "iStream";
@@ -138,6 +142,8 @@ namespace IStream
                 sb.AppendLine("autostart=" + (AutoStart ? "1" : "0"));
                 sb.AppendLine("lang=" + Language);
                 sb.AppendLine("theme=" + ThemeMode.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("background=" + (Background ? "1" : "0"));
+                sb.AppendLine("trayhint=" + (TrayHintShown ? "1" : "0"));
                 File.WriteAllText(FilePath, sb.ToString(), new UTF8Encoding(false));
             }
             catch { }
@@ -475,6 +481,8 @@ namespace IStream
         [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindow(string cls, string title);
         [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, int msg, IntPtr w, IntPtr l);
+        [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, int msg, IntPtr w, IntPtr l);
+        public const int WM_SHOWME = 0x8000 + 0x4953;   // WM_APP + 'IS': a second launch asks the running copy to show itself
         [DllImport("user32.dll")] public static extern bool RegisterHotKey(IntPtr h, int id, uint mod, uint vk);
         [DllImport("user32.dll")] public static extern bool UnregisterHotKey(IntPtr h, int id);
         [DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int val, int size);
@@ -567,6 +575,10 @@ namespace IStream
         Status status = Status.Stopped;
         string busyKey = "status_starting";
         bool wantRunning, busy, pending, loadingUi, closing, hk1 = true, hk2 = true, fwFixing;
+        bool startHidden, startedUp, quitting;
+        NotifyIcon tray;
+        ContextMenuStrip trayMenu;
+        ToolStripMenuItem trayOpen, trayPower, trayFullscreen, trayQuit;
         int lastAutoStart, lastWindowSeen = unchecked(Environment.TickCount - 100000);
         string transientHint;
         int transientUntil;
@@ -602,7 +614,7 @@ namespace IStream
         Label setTitle;
         readonly List<Section> sections = new List<Section>();
         SelectBox selQuality, selFps, selRenderer, selMonitor, selLang, selTheme;
-        ToggleSwitch tglLowLat, tglAudio, tglAutoFs, tglAutoStart, tglWinStart;
+        ToggleSwitch tglLowLat, tglAudio, tglAutoFs, tglAutoStart, tglWinStart, tglBackground;
         TextField txtName;
 
         // help page
@@ -631,7 +643,8 @@ namespace IStream
             iconBig = MakeIcon(32);
             iconSmall = MakeIcon(16);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { Icon = iconBig; }
-            if (minimized) WindowState = FormWindowState.Minimized;
+            startHidden = minimized && settings.Background && shotDir == null;
+            if (minimized && !startHidden) WindowState = FormWindowState.Minimized;
 
             SetupTooltips();
             Theme.Apply(ResolveTheme());
@@ -782,7 +795,7 @@ namespace IStream
             sideStatus = MkLabel(side, Theme.Small, Theme.Muted);
             sideShortcut = MkLabel(side, Theme.Tiny, Theme.Faint);
             sideVersion = MkLabel(side, Theme.Tiny, Theme.Faint);
-            sideVersion.Text = "iStream 1.2  ·  UxPlay engine";
+            sideVersion.Text = "iStream 1.3  ·  UxPlay engine";
         }
 
         FlatButton MkNav(Action<Graphics, RectangleF, Color> glyph, int pageIndex)
@@ -866,6 +879,7 @@ namespace IStream
             txtName = new TextField(); AddRow(g, "lbl_name", "desc_name", txtName);
             selLang = new SelectBox(); AddRow(g, "lbl_lang", "desc_lang", selLang);
             selTheme = new SelectBox(); AddRow(g, "lbl_theme", "desc_theme", selTheme);
+            tglBackground = new ToggleSwitch(); AddRow(g, "lbl_background", "desc_background", tglBackground);
             tglAutoStart = new ToggleSwitch(); AddRow(g, "lbl_autostart", "desc_autostart", tglAutoStart);
             tglWinStart = new ToggleSwitch(); AddRow(g, "lbl_winstart", "desc_winstart", tglWinStart);
 
@@ -877,6 +891,7 @@ namespace IStream
             tglAutoFs.CheckedChanged += delegate { if (loadingUi) return; settings.AutoFullscreen = tglAutoFs.Checked; settings.Save(); };
             selMonitor.SelectedIndexChanged += delegate { if (loadingUi) return; settings.Monitor = selMonitor.SelectedIndex - 1; settings.Save(); };
             tglAutoStart.CheckedChanged += delegate { if (loadingUi) return; settings.AutoStart = tglAutoStart.Checked; settings.Save(); };
+            tglBackground.CheckedChanged += delegate { if (loadingUi) return; settings.Background = tglBackground.Checked; settings.Save(); UpdateTray(); };
             tglWinStart.CheckedChanged += delegate { if (loadingUi) return; SetWinStart(tglWinStart.Checked); };
             selLang.SelectedIndexChanged += delegate
             {
@@ -988,6 +1003,7 @@ namespace IStream
             tglAudio.SetSilently(settings.Audio);
             tglAutoFs.SetSilently(settings.AutoFullscreen);
             tglAutoStart.SetSilently(settings.AutoStart);
+            tglBackground.SetSilently(settings.Background);
             tglWinStart.SetSilently(GetWinStart());
             if (!txtName.Box.Focused) txtName.Box.Text = settings.DeviceName;
 
@@ -1202,13 +1218,33 @@ namespace IStream
             ApplyTexts();
         }
 
+        // "Launch at Windows sign-in" with background mode on: start straight in the tray, window never shown.
+        protected override void SetVisibleCore(bool value)
+        {
+            if (startHidden)
+            {
+                startHidden = false;
+                value = false;
+                if (!IsHandleCreated) CreateHandle();
+                BeginInvoke(new Action(() => { ShowPage(0); ApplyTexts(); StartUp(); }));
+            }
+            base.SetVisibleCore(value);
+        }
+
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-
             if (shotDir != null) { TakeScreenshots(); return; }
+            StartUp();
+        }
 
-            hk1 = Native.RegisterHotKey(Handle, HK_FULLSCREEN, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, (uint)Keys.F);
+        void StartUp()
+        {
+            if (startedUp) return;
+            startedUp = true;
+            CreateTray();
+
+            hk1 =Native.RegisterHotKey(Handle, HK_FULLSCREEN, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, (uint)Keys.F);
             hk2 = Native.RegisterHotKey(Handle, HK_ROTATE, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, (uint)Keys.R);
             if (!hk1 || !hk2) ApplyTexts();
 
@@ -1232,7 +1268,15 @@ namespace IStream
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            // The X button only hides the window: the AirPlay receiver stays available in the tray.
+            if (!quitting && shotDir == null && settings.Background && tray != null && e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                HideToTray();
+                return;
+            }
             closing = true;
+            if (tray != null) { tray.Visible = false; tray.Dispose(); tray = null; }
             SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
             timer.Stop();
             Native.UnregisterHotKey(Handle, HK_FULLSCREEN);
@@ -1246,8 +1290,102 @@ namespace IStream
             base.OnFormClosing(e);
         }
 
+        // ---------------------------------------------------------- tray (background mode)
+
+        void CreateTray()
+        {
+            if (tray != null || shotDir != null) return;
+            trayMenu = new ContextMenuStrip();
+            trayMenu.Renderer = new DarkMenuRenderer();
+            trayMenu.ShowImageMargin = false;
+            trayMenu.Padding = new Padding(3, 4, 3, 4);
+            trayOpen = TrayItem(delegate { ShowFromTray(); });
+            trayOpen.Font = new Font(Theme.Body, FontStyle.Bold);
+            trayPower = TrayItem(delegate { TogglePower(); });
+            trayFullscreen = TrayItem(delegate { ToggleFullscreen(); });
+            trayQuit = TrayItem(delegate { Quit(); });
+            trayMenu.Items.Add(trayOpen);
+            trayMenu.Items.Add(new ToolStripSeparator());
+            trayMenu.Items.Add(trayPower);
+            trayMenu.Items.Add(trayFullscreen);
+            trayMenu.Items.Add(new ToolStripSeparator());
+            trayMenu.Items.Add(trayQuit);
+            trayMenu.Opening += delegate
+            {
+                trayMenu.Font = Theme.Body;
+                trayMenu.BackColor = Theme.MenuBg;
+                UpdateTray();
+            };
+            trayMenu.Opened += delegate { Native.RoundCorners(trayMenu.Handle); };
+
+            tray = new NotifyIcon();
+            tray.Icon = MakeIcon(SystemInformation.SmallIconSize.Width);
+            tray.ContextMenuStrip = trayMenu;
+            tray.MouseClick += delegate(object s, MouseEventArgs e) { if (e.Button == MouseButtons.Left) ShowFromTray(); };
+            UpdateTray();
+        }
+
+        ToolStripMenuItem TrayItem(EventHandler click)
+        {
+            var it = new ToolStripMenuItem();
+            it.Padding = new Padding(0, D(4), 0, D(4));
+            it.Click += click;
+            return it;
+        }
+
+        void UpdateTray()
+        {
+            if (tray == null) return;
+            string state = status == Status.Streaming ? L.T("status_streaming")
+                         : status == Status.Ready ? L.T("status_ready")
+                         : status == Status.Busy ? L.T(busyKey)
+                         : status == Status.Missing ? L.T("engine_missing_t")
+                         : L.T("status_stopped");
+            string tip = "iStream · " + state;
+            tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
+            tray.Visible = settings.Background || !Visible;
+
+            bool running = status == Status.Ready || status == Status.Streaming || wantRunning;
+            bool streaming = status == Status.Streaming;
+            trayOpen.Text = L.T("tray_open");
+            trayPower.Text = L.T(running ? "btn_stop" : "btn_start");
+            trayPower.Enabled = !busy && status != Status.Missing;
+            trayFullscreen.Text = L.T(streaming && video.IsFullscreen ? "btn_exit_fullscreen" : "btn_fullscreen");
+            trayFullscreen.Enabled = streaming;
+            trayQuit.Text = L.T("tray_quit");
+        }
+
+        void HideToTray()
+        {
+            Hide();
+            UpdateTray();
+            if (!settings.TrayHintShown)
+            {
+                settings.TrayHintShown = true;
+                settings.Save();
+                tray.ShowBalloonTip(5000, L.T("tray_hint_t"), L.T("tray_hint_b"), ToolTipIcon.None);
+            }
+        }
+
+        void ShowFromTray()
+        {
+            if (closing) return;
+            Show();
+            if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+            Activate();
+            Native.SetForegroundWindow(Handle);
+            UpdateTray();
+        }
+
+        void Quit()
+        {
+            quitting = true;
+            Close();
+        }
+
         protected override void WndProc(ref Message m)
         {
+            if (m.Msg == Native.WM_SHOWME) { ShowFromTray(); return; }
             if (m.Msg == 0x0312)   // WM_HOTKEY
             {
                 int id = m.WParam.ToInt32();
@@ -1330,6 +1468,7 @@ namespace IStream
             if (fwBanner.Visible != showFw) { fwBanner.Visible = showFw; relayout = true; }
 
             if (relayout && !force) LayoutStream();
+            UpdateTray();
         }
 
         void ShowHint(string text, int ms)

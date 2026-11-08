@@ -250,6 +250,24 @@ namespace IStream
             A("th1", "Light", "Jasny", "Hell", "Claro", "Clair", "Світлий");
             A("th2", "Dark", "Ciemny", "Dunkel", "Oscuro", "Sombre", "Темний");
             A("th3", "Gray", "Szary", "Grau", "Gris", "Gris", "Сірий");
+            A("lbl_background", "Keep running in the background", "Działaj w tle po zamknięciu", "Im Hintergrund weiterlaufen", "Seguir en segundo plano", "Continuer en arrière-plan", "Працювати у фоні");
+            A("desc_background",
+              "Closing the window keeps iStream in the tray, so your iPhone can connect any time.",
+              "Zamknięcie okna zostawia iStream w zasobniku, więc iPhone może się połączyć w każdej chwili.",
+              "Beim Schließen bleibt iStream im Infobereich, damit sich dein iPhone jederzeit verbinden kann.",
+              "Al cerrar la ventana, iStream sigue en la bandeja y tu iPhone puede conectarse en cualquier momento.",
+              "Fermer la fenêtre laisse iStream dans la zone de notification : votre iPhone peut se connecter à tout moment.",
+              "Закриття вікна залишає iStream у треї, тож iPhone може під’єднатися будь-коли.");
+            A("tray_open", "Open iStream", "Otwórz iStream", "iStream öffnen", "Abrir iStream", "Ouvrir iStream", "Відкрити iStream");
+            A("tray_quit", "Quit iStream", "Zamknij iStream", "iStream beenden", "Salir de iStream", "Quitter iStream", "Вийти з iStream");
+            A("tray_hint_t", "iStream is still running", "iStream nadal działa", "iStream läuft weiter", "iStream sigue funcionando", "iStream fonctionne toujours", "iStream працює далі");
+            A("tray_hint_b",
+              "Your iPhone can mirror to this PC any time. To quit, right-click the iStream icon here.",
+              "iPhone może w każdej chwili klonować ekran na ten komputer. Aby zamknąć, kliknij tu prawym przyciskiem ikonę iStream.",
+              "Dein iPhone kann jederzeit auf diesen PC spiegeln. Zum Beenden hier mit der rechten Maustaste auf das iStream-Symbol klicken.",
+              "Tu iPhone puede duplicar la pantalla en este PC en cualquier momento. Para salir, haz clic derecho aquí en el icono de iStream.",
+              "Votre iPhone peut diffuser vers ce PC à tout moment. Pour quitter, faites un clic droit ici sur l'icône iStream.",
+              "iPhone може будь-коли дублювати екран на цей ПК. Щоб вийти, клацніть тут правою кнопкою на значку iStream.");
             A("lbl_autostart", "Start server with the app", "Uruchamiaj serwer z aplikacją", "Server mit der App starten", "Iniciar el servidor con la aplicación", "Démarrer le serveur avec l'application", "Запускати сервер разом із програмою");
             A("desc_autostart",
               "iStream is ready as soon as you open it.",
@@ -260,12 +278,12 @@ namespace IStream
               "iStream готовий одразу після відкриття.");
             A("lbl_winstart", "Launch at Windows sign-in", "Uruchamiaj przy logowaniu do Windows", "Bei der Windows-Anmeldung starten", "Abrir al iniciar sesión en Windows", "Lancer à l'ouverture de session", "Запускати під час входу в Windows");
             A("desc_winstart",
-              "Opens iStream automatically when you sign in.",
-              "iStream otworzy się automatycznie po zalogowaniu.",
-              "iStream öffnet sich automatisch nach der Anmeldung.",
-              "Abre iStream automáticamente al iniciar sesión.",
-              "Ouvre iStream automatiquement à la connexion.",
-              "iStream відкриватиметься автоматично після входу.");
+              "Starts iStream quietly in the tray when you sign in.",
+              "iStream uruchomi się po cichu w zasobniku po zalogowaniu.",
+              "iStream startet nach der Anmeldung unauffällig im Infobereich.",
+              "iStream se inicia discretamente en la bandeja al iniciar sesión.",
+              "iStream démarre discrètement dans la zone de notification à la connexion.",
+              "iStream тихо запускатиметься в треї після входу.");
 
             A("help_connect_t", "Connecting", "Łączenie", "Verbinden", "Conexión", "Connexion", "Підключення");
             A("help_connect_b",
