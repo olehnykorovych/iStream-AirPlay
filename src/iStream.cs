@@ -20,7 +20,7 @@ using Microsoft.Win32;
 
 [assembly: System.Reflection.AssemblyTitle("iStream")]
 [assembly: System.Reflection.AssemblyProduct("iStream")]
-[assembly: System.Reflection.AssemblyVersion("1.4.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.4.1.0")]
 
 namespace IStream
 {
@@ -843,7 +843,7 @@ namespace IStream
             sideStatus = MkLabel(side, Theme.Small, Theme.Muted);
             sideShortcut = MkLabel(side, Theme.Tiny, Theme.Faint);
             sideVersion = MkLabel(side, Theme.Tiny, Theme.Faint);
-            sideVersion.Text = "iStream 1.4  ·  UxPlay engine";
+            sideVersion.Text = "iStream 1.4.1  ·  UxPlay engine";
         }
 
         FlatButton MkNav(Action<Graphics, RectangleF, Color> glyph, int pageIndex)
