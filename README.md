@@ -145,11 +145,23 @@ powershell -ExecutionPolicy Bypass -File scripts\get-engine.ps1
 build.cmd
 ```
 
-`get-engine.ps1` downloads the engine from the official uxplay-windows release and checks its SHA-256.
+`get-engine.ps1` downloads the engine from the official uxplay-windows release and checks its SHA-256. `build.cmd` builds `iStream.exe` in the project folder, ready to run.
 
-To build the installer, put the portable package at `dist\iStream-vX.Y.Z-win-x64.zip` (the `iStream` folder with `iStream.exe`, `engine\`, `LICENSE`, `THIRD_PARTY_NOTICES.md` and `scripts\README.txt` as `README.txt`) and run `build-setup.cmd`. It embeds that ZIP and a small uninstaller into `dist\iStream-Setup-X.Y.Z.exe`.
+To build the release files (portable ZIP and installer, unsigned) run:
+
+```bat
+powershell -ExecutionPolicy Bypass -File scripts\pack.ps1
+```
+
+They land in `dist\`. The version comes from `AssemblyVersion` in `src/iStream.cs`.
+
+**Releases** are built by [GitHub Actions](.github/workflows/release.yml), not on a developer's computer. Pushing a tag like `v1.5.0` (matching `AssemblyVersion`) builds the app, code-signs it, packages it, signs the installer and publishes the release with the notes from [RELEASE_NOTES.md](RELEASE_NOTES.md). See the [code signing policy](CODE_SIGNING.md).
 
 **Adding a language:** add a code and name to `L.Codes` / `L.Names` in `src/Strings.cs`, then add one more value to every `A(...)` line.
+
+## Code signing
+
+Releases are built from this repository by GitHub Actions and code-signed through the SignPath Foundation's free program for open source projects (application in progress; until then releases are unsigned). Details, the team and what gets signed: [CODE_SIGNING.md](CODE_SIGNING.md).
 
 ## Privacy
 

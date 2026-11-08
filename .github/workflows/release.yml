@@ -1,0 +1,127 @@
+# Builds iStream on GitHub's Windows runners, code-signs it through SignPath (once the SignPath
+# secrets are set) and publishes a GitHub release when a version tag (v1.2.3) is pushed.
+#
+# Manual run (Actions tab > Build and release > Run workflow) builds and uploads the files as a
+# workflow artifact without publishing anything.
+#
+# Settings > Secrets and variables > Actions:
+#   secret   SIGNPATH_API_TOKEN            API token of the SignPath CI user (signing is skipped while it's missing)
+#   variable SIGNPATH_ORGANIZATION_ID      SignPath organization ID
+#   variable SIGNPATH_PROJECT_SLUG         e.g. iStream-AirPlay
+#   variable SIGNPATH_SIGNING_POLICY_SLUG  e.g. release-signing
+# Artifact configurations "app" and "installer" are in .signpath/artifact-configurations/.
+
+name: Build and release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create the release
+  actions: read     # SignPath reads the uploaded artifacts
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version matches tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $m = Select-String -Path src\iStream.cs -Pattern 'AssemblyVersion\("(\d+\.\d+\.\d+)' | Select-Object -First 1
+          $v = $m.Matches[0].Groups[1].Value
+          if ("v$v" -ne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME doesn't match AssemblyVersion $v" }
+
+      - name: Download UxPlay engine
+        shell: pwsh
+        run: .\scripts\get-engine.ps1
+
+      - name: Build app
+        shell: pwsh
+        run: .\scripts\pack.ps1 -Stage app
+
+      - name: Upload app for signing
+        id: upload-app
+        if: env.SIGNPATH_API_TOKEN != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-unsigned
+          path: out/app/
+          if-no-files-found: error
+
+      - name: Sign app (SignPath)
+        if: env.SIGNPATH_API_TOKEN != ''
+        uses: SignPath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: app
+          github-artifact-id: ${{ steps.upload-app.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: out/app
+
+      - name: Package ZIP and installer
+        shell: pwsh
+        run: .\scripts\pack.ps1 -Stage package
+
+      - name: Upload installer for signing
+        id: upload-installer
+        if: env.SIGNPATH_API_TOKEN != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-unsigned
+          path: dist/iStream-Setup-*.exe
+          if-no-files-found: error
+
+      - name: Sign installer (SignPath)
+        if: env.SIGNPATH_API_TOKEN != ''
+        uses: SignPath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist
+
+      - name: Show signatures and checksums
+        shell: pwsh
+        run: |
+          foreach ($f in @('out\app\iStream.exe', 'out\app\uninstall.exe') + (Get-ChildItem dist\iStream-Setup-*.exe).FullName) {
+            $s = Get-AuthenticodeSignature $f
+            '{0}: {1} {2}' -f (Split-Path $f -Leaf), $s.Status, $s.SignerCertificate.Subject
+          }
+          Get-ChildItem dist\*.exe, dist\*.zip | Get-FileHash | ForEach-Object { '{0}  {1}' -f $_.Hash, (Split-Path $_.Path -Leaf) }
+
+      - name: Upload release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: |
+            dist/iStream-Setup-*.exe
+            dist/iStream-v*-win-x64.zip
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $setup = (Get-ChildItem dist\iStream-Setup-*.exe).FullName
+          $zip = (Get-ChildItem dist\iStream-v*-win-x64.zip).FullName
+          $notes = (Get-Content RELEASE_NOTES.md -Raw).
+            Replace('{{VERSION}}', $env:GITHUB_REF_NAME.TrimStart('v')).
+            Replace('{{SHA256_SETUP}}', (Get-FileHash $setup).Hash).
+            Replace('{{SHA256_ZIP}}', (Get-FileHash $zip).Hash)
+          Set-Content notes.md $notes -Encoding utf8NoBOM
+          gh release create $env:GITHUB_REF_NAME --title "iStream $($env:GITHUB_REF_NAME.TrimStart('v'))" --notes-file notes.md --latest $setup $zip

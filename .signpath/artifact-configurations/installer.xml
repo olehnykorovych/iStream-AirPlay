@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SignPath artifact configuration "installer": the GitHub artifact with iStream-Setup-<version>.exe
+     (step "Package ZIP and installer"). iStream.exe inside it was already signed with the "app" configuration. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="iStream-Setup-*.exe" product-name="iStream">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>
