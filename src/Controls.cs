@@ -372,14 +372,27 @@ namespace IStream
         }
     }
 
+    // A status light: a solid dot with a soft glow around it. The control is larger than the dot
+    // (Halo pixels on every side) so the glow has room; Pulse makes the glow breathe (used while streaming).
     sealed class StatusDot : Control
     {
+        public static readonly Color Green = Color.FromArgb(0x34, 0xC7, 0x59);
+        public static readonly Color Orange = Color.FromArgb(0xFF, 0x9F, 0x0A);
+        public static readonly Color Red = Color.FromArgb(0xFF, 0x3B, 0x30);
+
         Color color = Color.Gray;
+        bool pulse;
+        float phase;
+        readonly Timer anim = new Timer { Interval = 50 };
 
         public StatusDot()
         {
-            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
+                     ControlStyles.SupportsTransparentBackColor, true);
+            anim.Tick += delegate { phase += 0.12f; if (phase > 2 * (float)Math.PI) phase -= 2 * (float)Math.PI; Invalidate(); };
         }
+
+        public int Halo { get { return Math.Max(2, Width / 4); } }
 
         public Color DotColor
         {
@@ -387,10 +400,43 @@ namespace IStream
             set { if (color != value) { color = value; Invalidate(); } }
         }
 
+        public bool Pulse
+        {
+            get { return pulse; }
+            set
+            {
+                if (pulse == value) return;
+                pulse = value;
+                anim.Enabled = value;
+                phase = 0;
+                Invalidate();
+            }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
-            Gfx.Prepare(e.Graphics, this);
-            using (var b = new SolidBrush(color)) e.Graphics.FillEllipse(b, 0.5f, 0.5f, Width - 2, Height - 2);
+            Graphics g = e.Graphics;
+            Gfx.Prepare(g, this);
+            float w = Width - 1, halo = Halo, d = w - 2 * halo;
+            float strength = pulse ? 0.55f + 0.45f * (float)Math.Sin(phase) : 0.6f;
+            // glow: a few rings fading outwards
+            for (int i = 3; i >= 1; i--)
+            {
+                float r = d / 2f + halo * i / 3f;
+                int a = (int)(strength * (i == 3 ? 28 : i == 2 ? 52 : 90));
+                using (var b = new SolidBrush(Color.FromArgb(a, color)))
+                    g.FillEllipse(b, w / 2f - r, w / 2f - r, 2 * r, 2 * r);
+            }
+            using (var b = new SolidBrush(color)) g.FillEllipse(b, halo, halo, d, d);
+            // small highlight so it reads as a lit lamp
+            using (var b = new SolidBrush(Color.FromArgb(90, Color.White)))
+                g.FillEllipse(b, halo + d * 0.22f, halo + d * 0.16f, d * 0.36f, d * 0.3f);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) anim.Dispose();
+            base.Dispose(disposing);
         }
     }
 

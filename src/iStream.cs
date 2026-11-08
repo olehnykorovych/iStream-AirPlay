@@ -838,7 +838,7 @@ namespace IStream
             navSettings = MkNav(Icons.Sliders, 1);
             navHelp = MkNav(Icons.Help, 2);
 
-            sideDot = new StatusDot { Size = new Size(D(9), D(9)), BackColor = Theme.Side };
+            sideDot = new StatusDot { Size = new Size(D(18), D(18)), BackColor = Theme.Side };
             side.Controls.Add(sideDot);
             sideStatus = MkLabel(side, Theme.Small, Theme.Muted);
             sideShortcut = MkLabel(side, Theme.Tiny, Theme.Faint);
@@ -857,7 +857,7 @@ namespace IStream
         void BuildStreamPage()
         {
             pageStream = MkPage(false);
-            dot = new StatusDot { Size = new Size(D(12), D(12)), BackColor = Theme.Bg };
+            dot = new StatusDot { Size = new Size(D(24), D(24)), BackColor = Theme.Bg };
             pageStream.Controls.Add(dot);
             lblTitle = MkLabel(pageStream, Theme.H1, Theme.Text);
             lblHint = MkLabel(pageStream, Theme.Body, Theme.Muted);
@@ -1027,7 +1027,7 @@ namespace IStream
             navStream.Text = L.T("nav_stream");
             navSettings.Text = L.T("nav_settings");
             navHelp.Text = L.T("nav_help");
-            sideShortcut.Text = !hk1 || !hk2 ? L.F("shortcut_busy", !hk1 ? "F" : "R") : "Ctrl+Alt+F  ·  Ctrl+Alt+R";
+            sideShortcut.Text = !hk1 || !hk2 ? L.F("shortcut_busy", !hk1 ? "F" : "R") : "";
 
             btnFw.Text = fwFixing ? L.T("fw_fixing") : L.T("fw_fix");
             lblFw.Text = fwState == Firewall.State.Blocked ? L.T("fw_blocked") : L.T("fw_norule");
@@ -1104,9 +1104,11 @@ namespace IStream
             }
             sideVersion.Location = new Point(D(20), h - D(22) - sideVersion.Height);
             sideShortcut.MaximumSize = new Size(w - D(40), 0);
+            sideShortcut.Visible = sideShortcut.Text.Length > 0;
             sideShortcut.Location = new Point(D(20), sideVersion.Top - D(4) - sideShortcut.Height);
-            sideStatus.Location = new Point(D(36), sideShortcut.Top - D(14) - sideStatus.Height);
-            sideDot.Location = new Point(D(20), sideStatus.Top + (sideStatus.Height - sideDot.Height) / 2);
+            int above = sideShortcut.Visible ? sideShortcut.Top : sideVersion.Top;
+            sideStatus.Location = new Point(D(36), above - D(14) - sideStatus.Height);
+            sideDot.Location = new Point(D(20) - sideDot.Halo, sideStatus.Top + (sideStatus.Height - sideDot.Height) / 2);
         }
 
         void LayoutStream()
@@ -1115,7 +1117,7 @@ namespace IStream
             int x0 = D(48), cw = D(ClientW - SideW) - 2 * x0;
             int y = D(44);
             lblTitle.Location = new Point(x0 + D(24), y);
-            dot.Location = new Point(x0, y + (lblTitle.Height - dot.Height) / 2 + D(1));
+            dot.Location = new Point(x0 - dot.Halo, y + (lblTitle.Height - dot.Height) / 2 + D(1));
             y += lblTitle.Height + D(6);
             lblHint.MaximumSize = new Size(cw, 0);
             lblHint.Location = new Point(x0, y);
@@ -1671,15 +1673,15 @@ namespace IStream
             switch (status)
             {
                 case Status.Missing:
-                    c = Theme.Bad; title = L.T("engine_missing_t"); hint = L.T("engine_missing_b"); shortText = L.T("s_stopped"); break;
+                    c = StatusDot.Red; title = L.T("engine_missing_t"); hint = L.T("engine_missing_b"); shortText = L.T("s_stopped"); break;
                 case Status.Busy:
-                    c = Theme.Warn; title = L.T(busyKey); hint = lblHint.Text; shortText = L.T("s_busy"); break;
+                    c = StatusDot.Orange; title = L.T(busyKey); hint = lblHint.Text; shortText = L.T("s_busy"); break;
                 case Status.Streaming:
-                    c = Theme.Good; title = L.T("status_streaming"); hint = L.T("hint_streaming"); shortText = L.T("s_streaming"); break;
+                    c = StatusDot.Green; title = L.T("status_streaming"); hint = L.T("hint_streaming"); shortText = L.T("s_streaming"); break;
                 case Status.Ready:
-                    c = Theme.Accent; title = L.T("status_ready"); hint = L.F("hint_ready", "“" + settings.DeviceName + "”"); shortText = L.T("s_ready"); break;
+                    c = StatusDot.Green; title = L.T("status_ready"); hint = L.F("hint_ready", "“" + settings.DeviceName + "”"); shortText = L.T("s_ready"); break;
                 default:
-                    c = Theme.Faint; title = L.T("status_stopped"); hint = L.T("hint_stopped"); shortText = L.T("s_stopped"); break;
+                    c = StatusDot.Red; title = L.T("status_stopped"); hint = L.T("hint_stopped"); shortText = L.T("s_stopped"); break;
             }
             if (status == Status.Busy && force) hint = L.T("hint_stopped");
             if (transientHint != null && unchecked(Environment.TickCount - transientUntil) < 0) hint = transientHint;
@@ -1689,6 +1691,7 @@ namespace IStream
             if (lblHint.Text != hint) { lblHint.Text = hint; relayout = true; }
             dot.DotColor = c;
             sideDot.DotColor = c;
+            dot.Pulse = sideDot.Pulse = status == Status.Streaming;   // breathing glow while streaming
             if (sideStatus.Text != shortText) sideStatus.Text = shortText;
 
             bool running = status == Status.Ready || status == Status.Streaming || wantRunning;
@@ -1889,6 +1892,15 @@ namespace IStream
             Directory.CreateDirectory(shotDir);
             fwState = Firewall.Check(engine.ExePath);
             lblFw.Text = fwState == Firewall.State.Blocked ? L.T("fw_blocked") : L.T("fw_norule");
+            status = Status.Stopped;
+            RefreshStatus(true);
+            LayoutStream();
+            Snap("0a-stream-stopped.png");
+            status = Status.Busy;
+            RefreshStatus(true);
+            LayoutStream();
+            Snap("0b-stream-busy.png");
+
             status = Status.Ready;
             RefreshStatus(true);
             LayoutStream();
