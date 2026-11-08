@@ -16,12 +16,30 @@ namespace IStream
                             NavHover, NavSelected, Good, Warn, WarnTint, WarnBorder, Bad, MenuBg,
                             ToggleOff, KnobOff;
 
+        public const int Light = 0, Dark = 1, Gray = 2;
+        public static int Variant = Dark;
+
         static Theme() { Apply(true); }
 
-        public static void Apply(bool dark)
+        public static void Apply(bool dark) { Apply(dark ? Dark : Light); }
+
+        public static void Apply(int variant)
         {
-            IsDark = dark;
-            if (dark)
+            Variant = variant;
+            IsDark = variant != Light;   // gray uses dark title bar, scrollbars and menus
+            if (variant == Gray)
+            {
+                // graphite: between white-on-black and black-on-white
+                Side = C(0x262626); Bg = C(0x2E2E2E); Card = C(0x383838); CardHover = C(0x424242);
+                Field = C(0x292929); FieldHover = C(0x333333); Border = C(0x555555); BorderSoft = C(0x474747);
+                Text = C(0xF5F5F5); Muted = C(0xC2C2C2); Faint = C(0x929292);
+                Accent = C(0xF5F5F5); AccentHover = C(0xDEDEDE); AccentDown = C(0xC4C4C4); OnAccent = C(0x1F1F1F);
+                AccentTint = C(0x474747); NavHover = C(0x303030); NavSelected = C(0x3A3A3A);
+                Good = C(0x4ADE80); Warn = C(0xFBBF24); Bad = C(0xF87171);
+                WarnTint = C(0x383838); WarnBorder = C(0x5A5A5A);
+                MenuBg = C(0x383838); ToggleOff = C(0x5C5C5C); KnobOff = C(0xE0E0E0);
+            }
+            else if (variant == Dark)
             {
                 Side = C(0x000000); Bg = C(0x0A0A0A); Card = C(0x141414); CardHover = C(0x1F1F1F);
                 Field = C(0x0A0A0A); FieldHover = C(0x171717); Border = C(0x333333); BorderSoft = C(0x242424);

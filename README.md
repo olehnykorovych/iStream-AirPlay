@@ -21,7 +21,7 @@
 - **Settings never cut your stream.** Changes that need the iPhone to reconnect (resolution, frame rate, rotation…) are saved and applied when the stream ends. Hit *Apply now* if you want them immediately.
 - **Fast, reliable reconnects.** A new connection takes over instantly, and the server restarts itself if it ever crashes.
 - **One-click firewall fix** if Windows is blocking connections.
-- **Light and dark themes** (black-on-white / white-on-black) that follow Windows.
+- **Light, gray and dark themes** (black-on-white, graphite, white-on-black). By default it follows Windows.
 - **6 languages:** English, Polski, Deutsch, Español, Français, Українська.
 - **Easy install, or portable.** The installer needs no administrator rights and adds iStream to the Start menu; or unzip the portable package and run it. Settings live in `%APPDATA%\iStream`.
 
@@ -61,6 +61,10 @@ That's it. The status changes to *Streaming* and the video window opens.
   <img src="docs/screenshots/settings-light.png" width="49%" alt="Settings in light mode">
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/stream-gray.png" width="60%" alt="iStream in the gray theme">
+</p>
+
 ### Settings
 
 | Setting | What it does |
@@ -73,7 +77,7 @@ That's it. The status changes to *Streaming* and the video window opens.
 | Fullscreen on connect | Go fullscreen as soon as the iPhone connects |
 | Fullscreen monitor | Which screen fullscreen uses |
 | Name in AirPlay list | How the PC appears on your iPhone |
-| Language / Appearance | Interface language; light, dark or same as Windows |
+| Language / Appearance | Interface language; light, gray, dark or same as Windows |
 | Start server with the app / Launch at Windows sign-in | Be ready without clicking anything |
 
 **Tip:** for the lowest latency, connect the PC by cable and keep the iPhone on 5 GHz Wi-Fi. If the picture stutters, drop to 1080p or 720p.

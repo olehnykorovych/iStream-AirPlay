@@ -15,7 +15,7 @@
 - **Obrót** o 90°, 180° i 270°, wykonywany na GPU.
 - **Zmiana ustawień nie przerywa streamu.** Zmiany wymagające ponownego połączenia są zapisywane i stosowane po zakończeniu streamu, a przycisk *Apply now* stosuje je od razu.
 - **Naprawa zapory jednym kliknięciem.**
-- **Jasny i ciemny motyw** (biało-czarny i czarno-biały), domyślnie jak w Windows.
+- **Jasny, szary i ciemny motyw** (biało-czarny, grafitowy i czarno-biały), domyślnie jak w Windows.
 - **6 języków**, w tym polski (Settings → Language).
 - **Instalator bez uprawnień administratora** (skrót w menu Start, deinstalacja w Ustawieniach Windows) albo **wersja przenośna** w ZIP-ie.
 

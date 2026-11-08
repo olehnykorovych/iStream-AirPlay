@@ -20,7 +20,7 @@ using Microsoft.Win32;
 
 [assembly: System.Reflection.AssemblyTitle("iStream")]
 [assembly: System.Reflection.AssemblyProduct("iStream")]
-[assembly: System.Reflection.AssemblyVersion("1.1.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.2.0.0")]
 
 namespace IStream
 {
@@ -38,7 +38,7 @@ namespace IStream
             {
                 if (args[i] == "--screenshot" && i + 1 < args.Length) shotDir = args[i + 1];
                 if (args[i] == "--lang" && i + 1 < args.Length) LangOverride = args[i + 1];
-                if (args[i] == "--theme" && i + 1 < args.Length) ThemeOverride = args[i + 1] == "light" ? 1 : 2;
+                if (args[i] == "--theme" && i + 1 < args.Length) ThemeOverride = args[i + 1] == "light" ? 1 : args[i + 1] == "gray" ? 3 : 2;
                 if (args[i] == "--minimized") minimized = true;
             }
             try { Native.SetPreferredAppMode(1); } catch { }   // allow dark scrollbars / menus
@@ -75,7 +75,7 @@ namespace IStream
         public int Rotation = 0;         // 0=0° 1=90° right 2=180° 3=90° left
         public bool AutoStart = true;
         public string Language = "en";
-        public int ThemeMode = 0;        // 0 = like Windows, 1 = light, 2 = dark
+        public int ThemeMode = 0;        // 0 = like Windows, 1 = light, 2 = dark, 3 = gray
 
         static string AppData { get { return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData); } }
         public static string Folder { get { return Path.Combine(AppData, "iStream"); } }
@@ -111,7 +111,7 @@ namespace IStream
                         case "rotation": s.Rotation = Clamp(ParseInt(v, 0), 0, 3); break;
                         case "autostart": s.AutoStart = v == "1"; break;
                         case "lang": if (Array.IndexOf(L.Codes, v) >= 0) s.Language = v; break;
-                        case "theme": s.ThemeMode = Clamp(ParseInt(v, 0), 0, 2); break;
+                        case "theme": s.ThemeMode = Clamp(ParseInt(v, 0), 0, 3); break;
                     }
                 }
                 if (s.DeviceName == "AirStream") s.DeviceName = "iStream";
@@ -634,7 +634,7 @@ namespace IStream
             if (minimized) WindowState = FormWindowState.Minimized;
 
             SetupTooltips();
-            Theme.Apply(ResolveDark());
+            Theme.Apply(ResolveTheme());
             BuildUi();
 
             timer.Interval = 300;
@@ -643,20 +643,27 @@ namespace IStream
 
         // ---------------------------------------------------------- theme
 
-        bool ResolveDark()
+        // The dropdown lists Windows, Light, Gray, Dark (gray sits between); ThemeMode keeps its stored numbers.
+        static readonly int[] ThemeOrder = { 0, 1, 3, 2 };
+        static int ThemeToIndex(int mode) { int i = Array.IndexOf(ThemeOrder, mode); return i < 0 ? 0 : i; }
+        static int IndexToTheme(int index) { return index >= 0 && index < ThemeOrder.Length ? ThemeOrder[index] : 0; }
+
+        // ThemeMode: 0 = like Windows, 1 = light, 2 = dark, 3 = gray
+        int ResolveTheme()
         {
             int mode = Program.ThemeOverride >= 0 ? Program.ThemeOverride : settings.ThemeMode;
-            if (mode == 1) return false;
-            if (mode == 2) return true;
+            if (mode == 1) return Theme.Light;
+            if (mode == 2) return Theme.Dark;
+            if (mode == 3) return Theme.Gray;
             try
             {
                 using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
                 {
                     object v = k == null ? null : k.GetValue("AppsUseLightTheme");
-                    return v is int && (int)v == 0;
+                    return v is int && (int)v == 0 ? Theme.Dark : Theme.Light;
                 }
             }
-            catch { return true; }
+            catch { return Theme.Dark; }
         }
 
         // (Re)creates every control with the current theme colours. Engine state lives in fields and survives.
@@ -690,7 +697,7 @@ namespace IStream
         {
             if (closing) return;
             int scroll = pageSettings != null ? -pageSettings.AutoScrollPosition.Y : 0;
-            Theme.Apply(ResolveDark());
+            Theme.Apply(ResolveTheme());
             ApplyWindowChrome();
             BuildUi();
             ApplyTexts();
@@ -708,7 +715,7 @@ namespace IStream
         void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
         {
             if (closing || settings.ThemeMode != 0 || Program.ThemeOverride >= 0) return;
-            if (ResolveDark() == Theme.IsDark) return;
+            if (ResolveTheme() == Theme.Variant) return;
             try { BeginInvoke(new Action(ApplyTheme)); } catch { }
         }
 
@@ -775,7 +782,7 @@ namespace IStream
             sideStatus = MkLabel(side, Theme.Small, Theme.Muted);
             sideShortcut = MkLabel(side, Theme.Tiny, Theme.Faint);
             sideVersion = MkLabel(side, Theme.Tiny, Theme.Faint);
-            sideVersion.Text = "iStream 1.1  ·  UxPlay engine";
+            sideVersion.Text = "iStream 1.2  ·  UxPlay engine";
         }
 
         FlatButton MkNav(Action<Graphics, RectangleF, Color> glyph, int pageIndex)
@@ -882,7 +889,7 @@ namespace IStream
             selTheme.SelectedIndexChanged += delegate
             {
                 if (loadingUi) return;
-                settings.ThemeMode = Math.Max(0, selTheme.SelectedIndex);
+                settings.ThemeMode = IndexToTheme(Math.Max(0, selTheme.SelectedIndex));
                 settings.Save();
                 BeginInvoke(new Action(ApplyTheme));   // after the dropdown has closed
             };
@@ -976,7 +983,7 @@ namespace IStream
             int mi = settings.Monitor + 1;
             selMonitor.SetItems(mons, mi >= 0 && mi < mons.Count ? mi : 0);
             selLang.SetItems(L.Names, Math.Max(0, Array.IndexOf(L.Codes, L.Lang)));
-            selTheme.SetItems(new[] { L.T("th0"), L.T("th1"), L.T("th2") }, settings.ThemeMode);
+            selTheme.SetItems(new[] { L.T("th0"), L.T("th1"), L.T("th3"), L.T("th2") }, ThemeToIndex(settings.ThemeMode));
             tglLowLat.SetSilently(settings.LowLatency);
             tglAudio.SetSilently(settings.Audio);
             tglAutoFs.SetSilently(settings.AutoFullscreen);

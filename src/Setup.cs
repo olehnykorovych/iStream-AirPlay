@@ -19,8 +19,8 @@ using Microsoft.Win32;
 
 [assembly: AssemblyTitle("iStream Setup")]
 [assembly: AssemblyProduct("iStream")]
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
 
 namespace IStream
 {
@@ -34,7 +34,7 @@ namespace IStream
     static class Product
     {
         public const string Name = "iStream";
-        public const string Version = "1.1.0";
+        public const string Version = "1.2.0";
         public const string Publisher = "olehnykorovych";
         public const string Url = "https://github.com/olehnykorovych/iStream-AirPlay";
         public const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\iStream";
@@ -163,7 +163,7 @@ namespace IStream
             }
 
             using (Graphics g = Graphics.FromHwnd(IntPtr.Zero)) Gfx.Scale = g.DpiX / 96f;
-            Theme.Apply(Installer.PrefersDark());
+            Theme.Apply(Installer.PreferredTheme());
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new SetupForm(installMode));
@@ -186,7 +186,8 @@ namespace IStream
 
     static class Installer
     {
-        public static bool PrefersDark()
+        // Same appearance as the app: its saved setting, otherwise Windows' light/dark mode.
+        public static int PreferredTheme()
         {
             try
             {
@@ -194,8 +195,10 @@ namespace IStream
                 if (File.Exists(ini))
                     foreach (string line in File.ReadAllLines(ini))
                     {
-                        if (line.Trim() == "theme=1") return false;
-                        if (line.Trim() == "theme=2") return true;
+                        string t = line.Trim();
+                        if (t == "theme=1") return Theme.Light;
+                        if (t == "theme=2") return Theme.Dark;
+                        if (t == "theme=3") return Theme.Gray;
                     }
             }
             catch { }
@@ -204,10 +207,10 @@ namespace IStream
                 using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
                 {
                     object v = k == null ? null : k.GetValue("AppsUseLightTheme");
-                    return v is int && (int)v == 0;
+                    return v is int && (int)v == 0 ? Theme.Dark : Theme.Light;
                 }
             }
-            catch { return true; }
+            catch { return Theme.Dark; }
         }
 
         static IEnumerable<Process> Running(string onlyUnder)
@@ -562,7 +565,7 @@ namespace IStream
             lblLocation.SetBounds(x, D(118), w, D(24));
             int changeW = D(104), h = D(38);
             pathBox.SetBounds(x, D(146), w - changeW - D(10), h);
-            lblPath.SetBounds(D(12), D(1), pathBox.Width - D(24), h - D(2));
+            lblPath.SetBounds(D(12), D(3), pathBox.Width - D(24), h - D(6));   // keep clear of the 1 px border
             btnChange.SetBounds(x + w - changeW, D(146), changeW, h);
 
             tgDesktop.SetBounds(x, D(208), D(40), D(22));
@@ -597,7 +600,7 @@ namespace IStream
             subtitle.SetBounds(x + D(74), D(70), w - D(74), D(22));
             lblLocation.SetBounds(x, D(116), w, D(26));
             pathBox.SetBounds(x, D(146), w, D(38));
-            lblPath.SetBounds(D(12), D(1), pathBox.Width - D(24), D(36));
+            lblPath.SetBounds(D(12), D(3), pathBox.Width - D(24), D(32));
             tgLaunch.SetBounds(x, D(206), D(40), D(22));
             lblLaunch.SetBounds(x + D(52), D(203), w - D(52), D(28));
             lblLaunch.TextAlign = ContentAlignment.MiddleLeft;

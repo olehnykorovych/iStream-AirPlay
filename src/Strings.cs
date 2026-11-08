@@ -240,15 +240,16 @@ namespace IStream
             A("desc_lang", "Language of the iStream interface.", "Język interfejsu iStream.", "Sprache der iStream-Oberfläche.", "Idioma de la interfaz de iStream.", "Langue de l'interface d'iStream.", "Мова інтерфейсу iStream.");
             A("lbl_theme", "Appearance", "Wygląd", "Erscheinungsbild", "Apariencia", "Apparence", "Вигляд");
             A("desc_theme",
-              "Follow Windows, or always light or dark.",
-              "Jak w Windows albo zawsze jasny lub ciemny.",
-              "Wie Windows oder immer hell bzw. dunkel.",
-              "Igual que Windows, o siempre claro u oscuro.",
-              "Comme Windows, ou toujours clair ou sombre.",
-              "Як у Windows або завжди світлий чи темний.");
+              "Follow Windows, or always light, gray or dark.",
+              "Jak w Windows albo zawsze jasny, szary lub ciemny.",
+              "Wie Windows oder immer hell, grau bzw. dunkel.",
+              "Igual que Windows, o siempre claro, gris u oscuro.",
+              "Comme Windows, ou toujours clair, gris ou sombre.",
+              "Як у Windows або завжди світлий, сірий чи темний.");
             A("th0", "Same as Windows", "Jak w Windows", "Wie Windows", "Igual que Windows", "Comme Windows", "Як у Windows");
             A("th1", "Light", "Jasny", "Hell", "Claro", "Clair", "Світлий");
             A("th2", "Dark", "Ciemny", "Dunkel", "Oscuro", "Sombre", "Темний");
+            A("th3", "Gray", "Szary", "Grau", "Gris", "Gris", "Сірий");
             A("lbl_autostart", "Start server with the app", "Uruchamiaj serwer z aplikacją", "Server mit der App starten", "Iniciar el servidor con la aplicación", "Démarrer le serveur avec l'application", "Запускати сервер разом із програмою");
             A("desc_autostart",
               "iStream is ready as soon as you open it.",
