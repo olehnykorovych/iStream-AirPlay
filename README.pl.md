@@ -1,6 +1,6 @@
 # iStream (po polsku)
 
-**Darmowe klonowanie ekranu iPhone'a i iPada na komputer z Windows przez AirPlay.** Niskie opóźnienie, 60 FPS, dekodowanie na karcie graficznej. Bez instalatora, bez konta, bez reklam.
+**Darmowe klonowanie ekranu iPhone'a i iPada na komputer z Windows przez AirPlay.** Niskie opóźnienie, 60 FPS, dekodowanie na karcie graficznej. Instalacja jednym kliknięciem, bez konta, bez reklam.
 
 <p align="center"><img src="docs/screenshots/streaming-dark.png" width="70%" alt="iStream"></p>
 
@@ -17,16 +17,20 @@
 - **Naprawa zapory jednym kliknięciem.**
 - **Jasny i ciemny motyw** (biało-czarny i czarno-biały), domyślnie jak w Windows.
 - **6 języków**, w tym polski (Settings → Language).
-- **Wersja przenośna:** rozpakowujesz i uruchamiasz.
+- **Instalator bez uprawnień administratora** (skrót w menu Start, deinstalacja w Ustawieniach Windows) albo **wersja przenośna** w ZIP-ie.
 
 ## Jak zacząć
 
-1. [Pobierz](../../releases/latest) plik `iStream-vX.Y.Z-win-x64.zip` i rozpakuj go w dowolnym miejscu.
-2. Uruchom **`iStream.exe`**. Jeśli SmartScreen ostrzeże, że aplikacja nie jest podpisana, kliknij **Więcej informacji → Uruchom mimo to**.
+1. [Pobierz](../../releases/latest) plik **`iStream-Setup-X.Y.Z.exe`** i uruchom go. Jeśli SmartScreen ostrzeże, że aplikacja nie jest podpisana, kliknij **Więcej informacji → Uruchom mimo to**.
+2. Kliknij **Zainstaluj**. iStream zainstaluje się dla Twojego konta (bez uprawnień administratora), pojawi się w menu Start i od razu się uruchomi.
 3. Jeśli pojawi się pasek zapory, kliknij **Fix firewall** i zatwierdź okno administratora.
 4. Na iPhonie: **Centrum sterowania → Klonowanie ekranu → iStream**.
 
 Telefon i komputer muszą być w tej samej sieci.
+
+**Wersja przenośna:** zamiast instalatora pobierz `iStream-vX.Y.Z-win-x64.zip`, rozpakuj i uruchom `iStream.exe`.
+
+**Odinstalowanie:** Ustawienia Windows → Aplikacje → Zainstalowane aplikacje → iStream → Odinstaluj.
 
 ## Skróty
 

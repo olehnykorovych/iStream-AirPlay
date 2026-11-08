@@ -1,6 +1,6 @@
 # iStream
 
-**Free, open-source AirPlay screen mirroring for Windows.** Mirror your iPhone or iPad to your PC with low latency, 60 FPS and full GPU decoding. No installer, no account, no ads.
+**Free, open-source AirPlay screen mirroring for Windows.** Mirror your iPhone or iPad to your PC with low latency, 60 FPS and full GPU decoding. One-click installer, no account, no ads.
 
 <p align="center">
   <img src="docs/screenshots/stream-dark.png" width="49%" alt="iStream in dark mode">
@@ -23,7 +23,7 @@
 - **One-click firewall fix** if Windows is blocking connections.
 - **Light and dark themes** (black-on-white / white-on-black) that follow Windows.
 - **6 languages:** English, Polski, Deutsch, Español, Français, Українська.
-- **Portable.** Unzip and run. Settings live in `%APPDATA%\iStream`.
+- **Easy install, or portable.** The installer needs no administrator rights and adds iStream to the Start menu; or unzip the portable package and run it. Settings live in `%APPDATA%\iStream`.
 
 ## Requirements
 
@@ -33,13 +33,19 @@
 
 ## Getting started
 
-1. [Download](../../releases/latest) `iStream-vX.Y.Z-win-x64.zip` and unzip it anywhere.
-2. Run **`iStream.exe`**.
+1. [Download](../../releases/latest) **`iStream-Setup-X.Y.Z.exe`** and run it.
    Windows SmartScreen may warn you because the app isn't code-signed: click **More info → Run anyway**.
+2. Click **Install**. iStream is installed for your account (no administrator rights), added to the Start menu and opened.
 3. If a banner says the firewall is blocking iStream, click **Fix firewall** and approve the administrator prompt.
 4. On your iPhone open **Control Center → Screen Mirroring → iStream**.
 
 That's it. The status changes to *Streaming* and the video window opens.
+
+**Portable version:** prefer not to install anything? Download `iStream-vX.Y.Z-win-x64.zip` instead, unzip it anywhere and run `iStream.exe`.
+
+**Uninstall:** Windows *Settings → Apps → Installed apps → iStream → Uninstall*. Your settings are kept unless you tick *Also delete my iStream settings*.
+
+**Silent install** (for scripts): `iStream-Setup-X.Y.Z.exe --quiet [--dir "C:\path\iStream"] [--no-desktop] [--no-launch]`.
 
 ## Using iStream
 
@@ -83,7 +89,7 @@ That's it. The status changes to *Streaming* and the video window opens.
 
 **Windows asked about the firewall and I clicked Cancel.** Click *Fix firewall* in iStream. It removes the blocking rules and adds an allow rule for the engine.
 
-**I moved the folder and now it can't connect.** Firewall rules are tied to the file path. Click *Fix firewall* again.
+**I moved the folder (or switched from the ZIP to the installer) and now it can't connect.** Firewall rules are tied to the file path. Click *Fix firewall* again.
 
 **There are two tray icons.** One belongs to the engine. You can ignore it; iStream controls everything.
 
@@ -107,7 +113,8 @@ iStream/
    ├─ iStream.cs        engine control, firewall, fullscreen, main window
    ├─ Controls.cs       themes, custom controls, vector icons
    ├─ Strings.cs        translations
-   └─ IconArt.cs        app icon
+   ├─ IconArt.cs        app icon
+   └─ Setup.cs          installer and uninstaller
 ```
 
 ## Building from source
@@ -122,6 +129,8 @@ build.cmd
 ```
 
 `get-engine.ps1` downloads the engine from the official uxplay-windows release and checks its SHA-256.
+
+To build the installer, put the portable package at `dist\iStream-vX.Y.Z-win-x64.zip` (the `iStream` folder with `iStream.exe`, `engine\`, `LICENSE`, `THIRD_PARTY_NOTICES.md` and `scripts\README.txt` as `README.txt`) and run `build-setup.cmd`. It embeds that ZIP and a small uninstaller into `dist\iStream-Setup-X.Y.Z.exe`.
 
 **Adding a language:** add a code and name to `L.Codes` / `L.Names` in `src/Strings.cs`, then add one more value to every `A(...)` line.
 
