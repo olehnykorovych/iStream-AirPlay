@@ -11,7 +11,7 @@ build\mkicon.exe build\iStream.ico || exit /b 1
 
 "%CSC%" -nologo -platform:x64 -target:winexe -optimize+ ^
   -win32icon:build\iStream.ico -win32manifest:src\app.manifest ^
-  -r:System.dll -r:System.Core.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:Microsoft.CSharp.dll ^
-  -out:iStream.exe src\iStream.cs src\Controls.cs src\Strings.cs src\IconArt.cs || exit /b 1
+  -r:System.dll -r:System.Core.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:Microsoft.CSharp.dll -r:System.Web.Extensions.dll ^
+  -out:iStream.exe src\iStream.cs src\Controls.cs src\Strings.cs src\IconArt.cs src\Updater.cs || exit /b 1
 
 echo OK: iStream.exe

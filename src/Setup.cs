@@ -19,8 +19,8 @@ using Microsoft.Win32;
 
 [assembly: AssemblyTitle("iStream Setup")]
 [assembly: AssemblyProduct("iStream")]
-[assembly: AssemblyVersion("1.3.1.0")]
-[assembly: AssemblyFileVersion("1.3.1.0")]
+[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyFileVersion("1.4.0.0")]
 
 namespace IStream
 {
@@ -34,7 +34,7 @@ namespace IStream
     static class Product
     {
         public const string Name = "iStream";
-        public const string Version = "1.3.1";
+        public const string Version = "1.4.0";
         public const string Publisher = "olehnykorovych";
         public const string Url = "https://github.com/olehnykorovych/iStream-AirPlay";
         public const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\iStream";
@@ -123,8 +123,9 @@ namespace IStream
         [STAThread]
         static int Main(string[] args)
         {
-            bool quiet = false, noDesktop = false, noLaunch = false, purge = false;
+            bool quiet = false, noDesktop = false, noLaunch = false, purge = false, update = false, background = false;
             string dir = null;
+            int waitPid = 0;
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i].ToLowerInvariant();
@@ -132,7 +133,10 @@ namespace IStream
                 else if (a == "--no-desktop") noDesktop = true;
                 else if (a == "--no-launch") noLaunch = true;
                 else if (a == "--purge") purge = true;
+                else if (a == "--update") update = true;             // started by iStream's self-update
+                else if (a == "--background") background = true;     // start iStream hidden in the tray afterwards
                 else if (a == "--dir" && i + 1 < args.Length) dir = args[++i];
+                else if (a == "--wait-pid" && i + 1 < args.Length) int.TryParse(args[++i], out waitPid);
             }
 
             bool installMode = Payload.Has("payload.zip");
@@ -143,9 +147,13 @@ namespace IStream
                 {
                     if (installMode)
                     {
+                        string target = dir ?? Product.InstalledDir() ?? Product.DefaultDir;
+                        if (waitPid > 0) Installer.WaitForExit(waitPid, 15000);   // let iStream close itself cleanly
                         Installer.KillRunning(null);
-                        Installer.Install(dir ?? Product.InstalledDir() ?? Product.DefaultDir, !noDesktop, null);
-                        if (!noLaunch) Installer.Launch(dir ?? Product.InstalledDir() ?? Product.DefaultDir);
+                        // an update keeps the user's choice about the desktop shortcut
+                        bool desktop = update ? File.Exists(Product.DesktopLink) : !noDesktop;
+                        Installer.Install(target, desktop, null);
+                        if (!noLaunch) Installer.Launch(target, background, update);
                     }
                     else
                     {
@@ -328,14 +336,28 @@ namespace IStream
             }
         }
 
-        public static void Launch(string dir)
+        public static void Launch(string dir) { Launch(dir, false, false); }
+
+        // background: start hidden in the tray; updated: tell iStream it was just updated (shows a notice)
+        public static void Launch(string dir, bool background, bool updated)
         {
             try
             {
                 string exe = Path.Combine(Normalize(dir), "iStream.exe");
-                Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe), UseShellExecute = true });
+                string args = ((background ? "--minimized " : "") + (updated ? "--updated" : "")).Trim();
+                Process.Start(new ProcessStartInfo(exe, args)
+                {
+                    WorkingDirectory = Path.GetDirectoryName(exe),
+                    UseShellExecute = true
+                });
             }
             catch { }
+        }
+
+        public static void WaitForExit(int pid, int ms)
+        {
+            try { using (Process p = Process.GetProcessById(pid)) p.WaitForExit(ms); }
+            catch { }   // already gone
         }
 
         static long FolderSize(string dir)

@@ -20,7 +20,7 @@ using Microsoft.Win32;
 
 [assembly: System.Reflection.AssemblyTitle("iStream")]
 [assembly: System.Reflection.AssemblyProduct("iStream")]
-[assembly: System.Reflection.AssemblyVersion("1.3.1.0")]
+[assembly: System.Reflection.AssemblyVersion("1.4.0.0")]
 
 namespace IStream
 {
@@ -28,6 +28,7 @@ namespace IStream
     {
         public static string LangOverride;
         public static int ThemeOverride = -1;
+        public static bool JustUpdated;
 
         [STAThread]
         static void Main(string[] args)
@@ -40,6 +41,7 @@ namespace IStream
                 if (args[i] == "--lang" && i + 1 < args.Length) LangOverride = args[i + 1];
                 if (args[i] == "--theme" && i + 1 < args.Length) ThemeOverride = args[i + 1] == "light" ? 1 : args[i + 1] == "gray" ? 3 : 2;
                 if (args[i] == "--minimized") minimized = true;
+                if (args[i] == "--updated") JustUpdated = true;
             }
             try { Native.SetPreferredAppMode(1); } catch { }   // allow dark scrollbars / menus
 
@@ -78,6 +80,7 @@ namespace IStream
         public int ThemeMode = 0;        // 0 = like Windows, 1 = light, 2 = dark, 3 = gray
         public bool Background = true;   // closing the window keeps iStream running in the tray
         public bool TrayHintShown = false;
+        public bool AutoUpdate = true;   // check GitHub for new versions and install them when idle
 
         static string AppData { get { return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData); } }
         public static string Folder { get { return Path.Combine(AppData, "iStream"); } }
@@ -116,6 +119,7 @@ namespace IStream
                         case "theme": s.ThemeMode = Clamp(ParseInt(v, 0), 0, 3); break;
                         case "background": s.Background = v == "1"; break;
                         case "trayhint": s.TrayHintShown = v == "1"; break;
+                        case "autoupdate": s.AutoUpdate = v == "1"; break;
                     }
                 }
                 if (s.DeviceName == "AirStream") s.DeviceName = "iStream";
@@ -144,6 +148,7 @@ namespace IStream
                 sb.AppendLine("theme=" + ThemeMode.ToString(CultureInfo.InvariantCulture));
                 sb.AppendLine("background=" + (Background ? "1" : "0"));
                 sb.AppendLine("trayhint=" + (TrayHintShown ? "1" : "0"));
+                sb.AppendLine("autoupdate=" + (AutoUpdate ? "1" : "0"));
                 File.WriteAllText(FilePath, sb.ToString(), new UTF8Encoding(false));
             }
             catch { }
@@ -576,9 +581,10 @@ namespace IStream
         string busyKey = "status_starting";
         bool wantRunning, busy, pending, loadingUi, closing, hk1 = true, hk2 = true, fwFixing;
         bool startHidden, startedUp, quitting, rebuilding;
+        int startTick;
         NotifyIcon tray;
         ContextMenuStrip trayMenu;
-        ToolStripMenuItem trayOpen, trayPower, trayFullscreen, trayQuit;
+        ToolStripMenuItem trayOpen, trayPower, trayFullscreen, trayUpdate, trayQuit;
         int lastAutoStart, lastWindowSeen = unchecked(Environment.TickCount - 100000);
         string transientHint;
         int transientUntil;
@@ -614,7 +620,9 @@ namespace IStream
         Label setTitle;
         readonly List<Section> sections = new List<Section>();
         SelectBox selQuality, selFps, selRenderer, selMonitor, selLang, selTheme;
-        ToggleSwitch tglLowLat, tglAudio, tglAutoFs, tglAutoStart, tglWinStart, tglBackground;
+        ToggleSwitch tglLowLat, tglAudio, tglAutoFs, tglAutoStart, tglWinStart, tglBackground, tglAutoUpdate;
+        FlatButton btnUpdate;
+        Row rowVersion;
         TextField txtName;
 
         // help page
@@ -835,7 +843,7 @@ namespace IStream
             sideStatus = MkLabel(side, Theme.Small, Theme.Muted);
             sideShortcut = MkLabel(side, Theme.Tiny, Theme.Faint);
             sideVersion = MkLabel(side, Theme.Tiny, Theme.Faint);
-            sideVersion.Text = "iStream 1.3.1  ·  UxPlay engine";
+            sideVersion.Text = "iStream 1.4  ·  UxPlay engine";
         }
 
         FlatButton MkNav(Action<Graphics, RectangleF, Color> glyph, int pageIndex)
@@ -923,6 +931,10 @@ namespace IStream
             tglAutoStart = new ToggleSwitch(); AddRow(g, "lbl_autostart", "desc_autostart", tglAutoStart);
             tglWinStart = new ToggleSwitch(); AddRow(g, "lbl_winstart", "desc_winstart", tglWinStart);
 
+            Section u = AddSection("sec_updates");
+            tglAutoUpdate = new ToggleSwitch(); AddRow(u, "lbl_autoupdate", "desc_autoupdate", tglAutoUpdate);
+            btnUpdate = new FlatButton(BtnKind.Secondary); rowVersion = AddRow(u, "lbl_version", "upd_idle", btnUpdate);
+
             selQuality.SelectedIndexChanged += delegate { if (loadingUi) return; settings.Quality = selQuality.SelectedIndex; EngineSettingChanged(); };
             selFps.SelectedIndexChanged += delegate { if (loadingUi) return; settings.Fps = selFps.SelectedIndex == 1 ? 30 : 60; EngineSettingChanged(); };
             selRenderer.SelectedIndexChanged += delegate { if (loadingUi) return; settings.Renderer = selRenderer.SelectedIndex; EngineSettingChanged(); };
@@ -933,6 +945,14 @@ namespace IStream
             tglAutoStart.CheckedChanged += delegate { if (loadingUi) return; settings.AutoStart = tglAutoStart.Checked; settings.Save(); };
             tglBackground.CheckedChanged += delegate { if (loadingUi) return; settings.Background = tglBackground.Checked; settings.Save(); UpdateTray(); };
             tglWinStart.CheckedChanged += delegate { if (loadingUi) return; SetWinStart(tglWinStart.Checked); };
+            tglAutoUpdate.CheckedChanged += delegate
+            {
+                if (loadingUi) return;
+                settings.AutoUpdate = tglAutoUpdate.Checked;
+                settings.Save();
+                if (settings.AutoUpdate && !updChecked) CheckForUpdates(false);
+            };
+            btnUpdate.Click += delegate { OnUpdateButton(); };
             selLang.SelectedIndexChanged += delegate
             {
                 if (loadingUi) return;
@@ -968,7 +988,7 @@ namespace IStream
             return s;
         }
 
-        void AddRow(Section s, string titleKey, string descKey, Control ctl)
+        Row AddRow(Section s, string titleKey, string descKey, Control ctl)
         {
             var r = new Row { TitleKey = titleKey, DescKey = descKey, Ctl = ctl };
             r.Title = MkLabel(s.Card, Theme.Body, Theme.Text);
@@ -981,6 +1001,7 @@ namespace IStream
                 s.Card.Controls.Add(r.Sep);
             }
             s.Rows.Add(r);
+            return r;
         }
 
         void BuildHelpPage()
@@ -1044,6 +1065,7 @@ namespace IStream
             tglAutoFs.SetSilently(settings.AutoFullscreen);
             tglAutoStart.SetSilently(settings.AutoStart);
             tglBackground.SetSilently(settings.Background);
+            tglAutoUpdate.SetSilently(settings.AutoUpdate);
             tglWinStart.SetSilently(GetWinStart());
             if (!txtName.Box.Focused) txtName.Box.Text = settings.DeviceName;
 
@@ -1054,6 +1076,7 @@ namespace IStream
                 h.Body.Text = L.F(h.Key + "_b", settings.DeviceName);
             }
             loadingUi = false;
+            UpdateUpdateTexts(false);
 
             UpdateRotationTiles();
             RefreshStatus(true);
@@ -1282,7 +1305,10 @@ namespace IStream
         {
             if (startedUp) return;
             startedUp = true;
+            startTick = Environment.TickCount;
             CreateTray();
+            if (Program.JustUpdated && tray != null)
+                tray.ShowBalloonTip(5000, L.T("upd_done_t"), L.F("upd_done_b", Updater.Text(Updater.Current)), ToolTipIcon.None);
 
             hk1 =Native.RegisterHotKey(Handle, HK_FULLSCREEN, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, (uint)Keys.F);
             hk2 = Native.RegisterHotKey(Handle, HK_ROTATE, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, (uint)Keys.R);
@@ -1330,6 +1356,170 @@ namespace IStream
             base.OnFormClosing(e);
         }
 
+        // ---------------------------------------------------------- updates
+        //
+        // States: idle → checking → uptodate | available → downloading → ready → installing (app quits,
+        // the installer replaces it and starts it again). Automatic updates check 30 s after start and then
+        // every 6 hours, download in the background, and install only when nothing is streaming and the
+        // window isn't in use (hidden in the tray or minimized), never mid-stream.
+
+        UpdateInfo update;
+        string updState = "idle";
+        int updPct = -1, updLastCheck, updLastStream = unchecked(Environment.TickCount - 600000);
+        bool updChecked, updWorking;
+        string updInstaller;
+        const int UpdateEveryMs = 6 * 60 * 60 * 1000;
+
+        void UpdateTick()
+        {
+            if (status == Status.Streaming) updLastStream = Environment.TickCount;
+            if (!settings.AutoUpdate || updWorking) return;
+
+            bool due = !updChecked ? unchecked(Environment.TickCount - startTick) > 30000
+                                   : unchecked(Environment.TickCount - updLastCheck) > UpdateEveryMs;
+            if (due && (updState == "idle" || updState == "uptodate" || updState == "error")) { CheckForUpdates(false); return; }
+
+            bool idle = status != Status.Streaming && !busy && unchecked(Environment.TickCount - updLastStream) > 60000;
+            bool windowFree = !Visible || WindowState == FormWindowState.Minimized;
+            if (updState == "ready" && idle && windowFree) InstallUpdate(false);
+        }
+
+        void OnUpdateButton()
+        {
+            if (updWorking) return;
+            if (updState == "ready") { InstallUpdate(true); return; }
+            if (updState == "available" && update != null)
+            {
+                if (Updater.CanSelfUpdate(update)) DownloadUpdate(true);
+                else OpenUrl(update.PageUrl ?? Updater.ReleasesPage);
+                return;
+            }
+            CheckForUpdates(true);
+        }
+
+        void CheckForUpdates(bool manual)
+        {
+            if (updWorking || closing) return;
+            updWorking = true;
+            updChecked = true;
+            updLastCheck = Environment.TickCount;
+            updState = "checking";
+            UpdateUpdateTexts(true);
+            Task.Factory.StartNew(() => Updater.Check()).ContinueWith(t => UiAsync(() =>
+            {
+                updWorking = false;
+                if (t.IsFaulted)
+                {
+                    updState = manual ? "error" : (update != null ? "available" : "idle");
+                }
+                else if (t.Result == null)
+                {
+                    updState = "uptodate";
+                }
+                else
+                {
+                    bool fresh = update == null || update.Version != t.Result.Version;
+                    update = t.Result;
+                    updState = "available";
+                    if (settings.AutoUpdate && Updater.CanSelfUpdate(update)) { UpdateUpdateTexts(true); DownloadUpdate(false); return; }
+                    if (!manual && fresh && tray != null && !Visible)
+                        tray.ShowBalloonTip(5000, "iStream", L.F("upd_available", update.VersionText), ToolTipIcon.None);
+                }
+                UpdateUpdateTexts(true);
+            }));
+        }
+
+        void DownloadUpdate(bool installWhenDone)
+        {
+            if (updWorking || update == null) return;
+            UpdateInfo u = update;
+            updWorking = true;
+            updState = "downloading";
+            updPct = 0;
+            UpdateUpdateTexts(true);
+            Task.Factory.StartNew(() => Updater.Download(u, pct => UiAsync(() =>
+            {
+                if (pct != updPct) { updPct = pct; UpdateUpdateTexts(true); }
+            }))).ContinueWith(t => UiAsync(() =>
+            {
+                updWorking = false;
+                if (t.IsFaulted)
+                {
+                    updState = installWhenDone ? "error" : "available";
+                    UpdateUpdateTexts(true);
+                    return;
+                }
+                updInstaller = t.Result;
+                updState = "ready";
+                UpdateUpdateTexts(true);
+                if (installWhenDone) InstallUpdate(true);
+            }));
+        }
+
+        void InstallUpdate(bool manual)
+        {
+            if (updInstaller == null || !File.Exists(updInstaller)) { updState = "available"; updInstaller = null; UpdateUpdateTexts(true); return; }
+            if (manual && status == Status.Streaming &&
+                MessageBox.Show(this, L.T("upd_confirm_stream"), "iStream", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
+                return;
+            updState = "installing";
+            UpdateUpdateTexts(true);
+            try
+            {
+                Updater.RunInstaller(updInstaller, !Visible || WindowState == FormWindowState.Minimized);
+            }
+            catch
+            {
+                updState = "error";
+                UpdateUpdateTexts(true);
+                return;
+            }
+            Quit();   // the installer waits for this process, replaces the files and starts iStream again
+        }
+
+        void UpdateUpdateTexts(bool relayout)
+        {
+            if (rowVersion == null) return;
+            string v = update != null ? update.VersionText : "";
+            bool self = Updater.CanSelfUpdate(update);
+            string desc, btn;
+            bool enabled = true;
+            switch (updState)
+            {
+                case "checking": desc = L.T("upd_checking"); btn = L.T("btn_check"); enabled = false; break;
+                case "uptodate": desc = L.T("upd_uptodate"); btn = L.T("btn_check"); break;
+                case "available":
+                    desc = self ? L.F("upd_available", v) : L.F("upd_portable", v);
+                    btn = self ? L.F("btn_update", v) : L.T("btn_download");
+                    break;
+                case "downloading":
+                    desc = L.F("upd_downloading", v, Math.Max(0, updPct)); btn = L.F("btn_update", v); enabled = false; break;
+                case "ready": desc = L.F("upd_ready", v); btn = L.F("btn_update", v); break;
+                case "installing": desc = L.T("upd_installing"); btn = L.F("btn_update", v); enabled = false; break;
+                case "error": desc = L.T("upd_error"); btn = L.T("btn_check"); break;
+                default: desc = L.T("upd_idle"); btn = L.T("btn_check"); break;
+            }
+            string title = L.F("lbl_version", Updater.Text(Updater.Current));
+            bool changed = rowVersion.Title.Text != title || rowVersion.Desc.Text != desc;
+            rowVersion.Title.Text = title;
+            rowVersion.Desc.Text = desc;
+            btnUpdate.Text = btn;
+            btnUpdate.Enabled = enabled;
+            if (changed && relayout) LayoutSettings();
+            UpdateTray();
+        }
+
+        void UiAsync(Action a)
+        {
+            if (closing || IsDisposed || !IsHandleCreated) return;
+            try { BeginInvoke(a); } catch { }
+        }
+
+        static void OpenUrl(string url)
+        {
+            try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
+        }
+
         // ---------------------------------------------------------- tray (background mode)
 
         void CreateTray()
@@ -1343,11 +1533,13 @@ namespace IStream
             trayOpen.Font = new Font(Theme.Body, FontStyle.Bold);
             trayPower = TrayItem(delegate { TogglePower(); });
             trayFullscreen = TrayItem(delegate { ToggleFullscreen(); });
+            trayUpdate = TrayItem(delegate { ShowFromTray(); ShowPage(1); OnUpdateButton(); });
             trayQuit = TrayItem(delegate { Quit(); });
             trayMenu.Items.Add(trayOpen);
             trayMenu.Items.Add(new ToolStripSeparator());
             trayMenu.Items.Add(trayPower);
             trayMenu.Items.Add(trayFullscreen);
+            trayMenu.Items.Add(trayUpdate);
             trayMenu.Items.Add(new ToolStripSeparator());
             trayMenu.Items.Add(trayQuit);
             trayMenu.Opening += delegate
@@ -1393,6 +1585,9 @@ namespace IStream
             trayFullscreen.Text = L.T(streaming && video.IsFullscreen ? "btn_exit_fullscreen" : "btn_fullscreen");
             trayFullscreen.Enabled = streaming;
             trayQuit.Text = L.T("tray_quit");
+            bool offer = update != null && (updState == "available" || updState == "ready");
+            trayUpdate.Visible = offer;
+            if (offer) trayUpdate.Text = Updater.CanSelfUpdate(update) ? L.F("btn_update", update.VersionText) : L.T("btn_download");
         }
 
         void HideToTray()
@@ -1440,6 +1635,7 @@ namespace IStream
         void Tick()
         {
             if (closing || status == Status.Missing) return;
+            UpdateTick();
             if (busy) { RefreshStatus(false); return; }
 
             int pid = engine.RunningPid();

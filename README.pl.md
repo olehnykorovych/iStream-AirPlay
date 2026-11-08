@@ -15,6 +15,7 @@
 - **Obrót** o 90°, 180° i 270°, wykonywany na GPU.
 - **Zmiana ustawień nie przerywa streamu.** Zmiany wymagające ponownego połączenia są zapisywane i stosowane po zakończeniu streamu, a przycisk *Apply now* stosuje je od razu.
 - **Zawsze gotowy w tle.** Zamknięcie okna chowa iStream do zasobnika obok zegara, więc iPhone może się połączyć w każdej chwili. Z opcją *Launch at Windows sign-in* startuje po cichu w tle. Całkiem zamkniesz go z menu ikony w zasobniku (*Zamknij iStream*).
+- **Sam się aktualizuje.** Nowe wersje pobierają się w tle i instalują, gdy nic nie jest streamowane. Każdy plik jest sprawdzany sumą SHA-256 przed uruchomieniem. Ręcznie: *Settings → Updates → Check for updates*. Jedyny ruch sieciowy poza AirPlay to zapytanie do publicznego API GitHuba o najnowszą wersję (30 s po starcie i co 6 godzin), bez żadnych danych o Tobie. Można to wyłączyć w ustawieniach.
 - **Naprawa zapory jednym kliknięciem.**
 - **Jasny, szary i ciemny motyw** (biało-czarny, grafitowy i czarno-biały), domyślnie jak w Windows.
 - **6 języków**, w tym polski (Settings → Language).

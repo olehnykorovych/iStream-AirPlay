@@ -268,6 +268,49 @@ namespace IStream
               "Tu iPhone puede duplicar la pantalla en este PC en cualquier momento. Para salir, haz clic derecho aquí en el icono de iStream.",
               "Votre iPhone peut diffuser vers ce PC à tout moment. Pour quitter, faites un clic droit ici sur l'icône iStream.",
               "iPhone може будь-коли дублювати екран на цей ПК. Щоб вийти, клацніть тут правою кнопкою на значку iStream.");
+            A("sec_updates", "Updates", "Aktualizacje", "Updates", "Actualizaciones", "Mises à jour", "Оновлення");
+            A("lbl_autoupdate", "Update automatically", "Aktualizuj automatycznie", "Automatisch aktualisieren", "Actualizar automáticamente", "Mettre à jour automatiquement", "Оновлювати автоматично");
+            A("desc_autoupdate",
+              "Checks GitHub for new versions and installs them when nothing is streaming.",
+              "Sprawdza nowe wersje na GitHubie i instaluje je, gdy nic nie jest streamowane.",
+              "Sucht auf GitHub nach neuen Versionen und installiert sie, wenn nichts gestreamt wird.",
+              "Busca nuevas versiones en GitHub y las instala cuando no hay ninguna transmisión.",
+              "Recherche les nouvelles versions sur GitHub et les installe quand rien n'est diffusé.",
+              "Шукає нові версії на GitHub і встановлює їх, коли нічого не транслюється.");
+            A("lbl_version", "Version {0}", "Wersja {0}", "Version {0}", "Versión {0}", "Version {0}", "Версія {0}");
+            A("upd_idle", "Check whether a newer version is available.", "Sprawdź, czy jest nowsza wersja.", "Prüfen, ob eine neuere Version verfügbar ist.", "Comprueba si hay una versión más reciente.", "Vérifier si une version plus récente est disponible.", "Перевірити, чи є новіша версія.");
+            A("upd_checking", "Checking for updates…", "Sprawdzanie aktualizacji…", "Suche nach Updates…", "Buscando actualizaciones…", "Recherche de mises à jour…", "Перевірка оновлень…");
+            A("upd_uptodate", "You have the latest version.", "Masz najnowszą wersję.", "Du hast die neueste Version.", "Tienes la versión más reciente.", "Vous avez la dernière version.", "У вас найновіша версія.");
+            A("upd_available", "iStream {0} is available.", "Dostępny jest iStream {0}.", "iStream {0} ist verfügbar.", "iStream {0} está disponible.", "iStream {0} est disponible.", "Доступний iStream {0}.");
+            A("upd_portable",
+              "iStream {0} is available. This copy isn't installed, so download the new version from GitHub.",
+              "Dostępny jest iStream {0}. Ta kopia nie jest zainstalowana, więc pobierz nową wersję z GitHuba.",
+              "iStream {0} ist verfügbar. Diese Kopie ist nicht installiert, lade die neue Version von GitHub.",
+              "iStream {0} está disponible. Esta copia no está instalada; descarga la nueva versión desde GitHub.",
+              "iStream {0} est disponible. Cette copie n'est pas installée : téléchargez la nouvelle version sur GitHub.",
+              "Доступний iStream {0}. Ця копія не встановлена, тож завантажте нову версію з GitHub.");
+            A("upd_downloading", "Downloading iStream {0}… {1}%", "Pobieranie iStream {0}… {1}%", "iStream {0} wird geladen… {1}%", "Descargando iStream {0}… {1}%", "Téléchargement d'iStream {0}… {1}%", "Завантаження iStream {0}… {1}%");
+            A("upd_ready",
+              "iStream {0} is downloaded and installs when nothing is streaming, or click to install now.",
+              "iStream {0} jest pobrany i zainstaluje się, gdy nic nie będzie streamowane. Możesz też kliknąć, żeby zainstalować teraz.",
+              "iStream {0} ist geladen und wird installiert, wenn nichts gestreamt wird, oder klicke für sofort.",
+              "iStream {0} está descargado y se instalará cuando no haya transmisión, o haz clic para instalarlo ya.",
+              "iStream {0} est téléchargé et s'installera quand rien n'est diffusé, ou cliquez pour l'installer maintenant.",
+              "iStream {0} завантажено; він встановиться, коли нічого не транслюється, або натисніть, щоб установити зараз.");
+            A("upd_installing", "Installing the update… iStream restarts in a moment.", "Instalowanie aktualizacji… iStream za chwilę uruchomi się ponownie.", "Update wird installiert… iStream startet gleich neu.", "Instalando la actualización… iStream se reiniciará enseguida.", "Installation de la mise à jour… iStream redémarre dans un instant.", "Встановлення оновлення… iStream зараз перезапуститься.");
+            A("upd_error", "Couldn't check for updates. Check your internet connection and try again.", "Nie udało się sprawdzić aktualizacji. Sprawdź połączenie z internetem i spróbuj ponownie.", "Updates konnten nicht geprüft werden. Prüfe die Internetverbindung und versuche es erneut.", "No se pudieron buscar actualizaciones. Comprueba tu conexión a internet y vuelve a intentarlo.", "Impossible de vérifier les mises à jour. Vérifiez votre connexion Internet et réessayez.", "Не вдалося перевірити оновлення. Перевірте підключення до інтернету й спробуйте ще раз.");
+            A("btn_check", "Check for updates", "Sprawdź aktualizacje", "Nach Updates suchen", "Buscar actualizaciones", "Rechercher", "Перевірити оновлення");
+            A("btn_update", "Update to {0}", "Aktualizuj do {0}", "Auf {0} aktualisieren", "Actualizar a {0}", "Mettre à jour vers {0}", "Оновити до {0}");
+            A("btn_download", "Open download page", "Otwórz stronę pobierania", "Downloadseite öffnen", "Abrir página de descarga", "Ouvrir la page de téléchargement", "Відкрити сторінку завантаження");
+            A("upd_confirm_stream",
+              "Your iPhone is streaming. Installing the update restarts iStream and ends the stream. Install now?",
+              "Trwa stream z iPhone'a. Instalacja aktualizacji uruchomi iStream ponownie i przerwie stream. Zainstalować teraz?",
+              "Dein iPhone streamt gerade. Das Update startet iStream neu und beendet den Stream. Jetzt installieren?",
+              "Tu iPhone está transmitiendo. Instalar la actualización reinicia iStream y corta la transmisión. ¿Instalar ahora?",
+              "Votre iPhone diffuse en ce moment. L'installation redémarre iStream et coupe la diffusion. Installer maintenant ?",
+              "iPhone зараз транслює. Оновлення перезапустить iStream і перерве трансляцію. Встановити зараз?");
+            A("upd_done_t", "iStream was updated", "iStream został zaktualizowany", "iStream wurde aktualisiert", "iStream se ha actualizado", "iStream a été mis à jour", "iStream оновлено");
+            A("upd_done_b", "Now running version {0}.", "Działa teraz wersja {0}.", "Jetzt läuft Version {0}.", "Ahora se ejecuta la versión {0}.", "Version {0} en cours d'exécution.", "Тепер працює версія {0}.");
             A("lbl_autostart", "Start server with the app", "Uruchamiaj serwer z aplikacją", "Server mit der App starten", "Iniciar el servidor con la aplicación", "Démarrer le serveur avec l'application", "Запускати сервер разом із програмою");
             A("desc_autostart",
               "iStream is ready as soon as you open it.",

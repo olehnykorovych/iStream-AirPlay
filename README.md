@@ -20,6 +20,7 @@
 - **Rotation** by 90°, 180° or 270°, done on the GPU.
 - **Settings never cut your stream.** Changes that need the iPhone to reconnect (resolution, frame rate, rotation…) are saved and applied when the stream ends. Hit *Apply now* if you want them immediately.
 - **Always ready in the background.** Closing the window keeps iStream in the tray, so your iPhone can mirror any time. With *Launch at Windows sign-in* it starts quietly in the tray. Quit from the tray icon's menu.
+- **Updates itself.** New versions download in the background and install when nothing is streaming, and iStream picks up where it was (in the tray if it was hidden). Every download is checked against its SHA-256 before it runs. You can also update by hand from *Settings → Updates → Check for updates*.
 - **Fast, reliable reconnects.** A new connection takes over instantly, and the server restarts itself if it ever crashes.
 - **One-click firewall fix** if Windows is blocking connections.
 - **Light, gray and dark themes** (black-on-white, graphite, white-on-black). By default it follows Windows.
@@ -81,6 +82,7 @@ That's it. The status changes to *Streaming* and the video window opens.
 | Fullscreen monitor | Which screen fullscreen uses |
 | Name in AirPlay list | How the PC appears on your iPhone |
 | Language / Appearance | Interface language; light, gray, dark or same as Windows |
+| Update automatically | Download new versions and install them when nothing is streaming. The *Version* row has *Check for updates* (the portable ZIP opens the download page instead) |
 | Keep running in the background | Closing the window hides iStream to the tray instead of quitting (on by default) |
 | Start server with the app / Launch at Windows sign-in | Be ready without clicking anything; at sign-in iStream starts hidden in the tray |
 
@@ -124,6 +126,7 @@ iStream/
    ├─ Controls.cs       themes, custom controls, vector icons
    ├─ Strings.cs        translations
    ├─ IconArt.cs        app icon
+   ├─ Updater.cs        update check, download, SHA-256 check
    └─ Setup.cs          installer and uninstaller
 ```
 
@@ -146,7 +149,7 @@ To build the installer, put the portable package at `dist\iStream-vX.Y.Z-win-x64
 
 ## Privacy
 
-iStream doesn't phone home: no telemetry, no update checks, no accounts. The only network traffic is AirPlay on your local network.
+No telemetry, no accounts. Apart from AirPlay on your local network, the only traffic is the update check: when *Update automatically* is on (the default), iStream asks GitHub's public API for the latest release 30 seconds after it starts and then every 6 hours. It sends nothing about you, just a plain HTTPS request. Turn it off in *Settings → Updates*. You can still click *Check for updates* there whenever you like.
 
 ## License
 

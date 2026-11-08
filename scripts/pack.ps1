@@ -19,8 +19,8 @@ if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory $stage | Out-Null
 
 & $csc -nologo -platform:x64 -target:winexe -optimize+ -win32icon:build\iStream.ico -win32manifest:src\app.manifest `
-    -r:System.dll -r:System.Core.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:Microsoft.CSharp.dll `
-    "-out:$stage\iStream.exe" src\iStream.cs src\Controls.cs src\Strings.cs src\IconArt.cs
+    -r:System.dll -r:System.Core.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:Microsoft.CSharp.dll -r:System.Web.Extensions.dll `
+    "-out:$stage\iStream.exe" src\iStream.cs src\Controls.cs src\Strings.cs src\IconArt.cs src\Updater.cs
 if ($LASTEXITCODE) { throw 'app build failed' }
 
 Copy-Item engine (Join-Path $stage 'engine') -Recurse
