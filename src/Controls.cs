@@ -301,6 +301,18 @@ namespace IStream
 
     // ------------------------------------------------------------------ kontrolki
 
+    // A scrolling page that can be told not to move. WinForms scrolls a control into view whenever it gets focus,
+    // which threw the settings page back to the top after a theme change rebuilt it. While Hold is set, focus
+    // changes leave the scroll position alone; otherwise (Tab key) the normal scroll-into-view applies.
+    sealed class ScrollPanel : Panel
+    {
+        public bool Hold;
+        protected override Point ScrollToControl(Control activeControl)
+        {
+            return Hold ? DisplayRectangle.Location : base.ScrollToControl(activeControl);
+        }
+    }
+
     class CardPanel : Panel
     {
         Color fill = Theme.Card, stroke = Theme.BorderSoft;

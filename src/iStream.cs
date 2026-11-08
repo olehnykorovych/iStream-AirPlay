@@ -575,7 +575,7 @@ namespace IStream
         Status status = Status.Stopped;
         string busyKey = "status_starting";
         bool wantRunning, busy, pending, loadingUi, closing, hk1 = true, hk2 = true, fwFixing;
-        bool startHidden, startedUp, quitting;
+        bool startHidden, startedUp, quitting, rebuilding;
         NotifyIcon tray;
         ContextMenuStrip trayMenu;
         ToolStripMenuItem trayOpen, trayPower, trayFullscreen, trayQuit;
@@ -706,15 +706,55 @@ namespace IStream
             ResumeLayout();
         }
 
+        // Rebuilds the UI in the new colours without moving: the page, its scroll position and the focused
+        // dropdown stay where they were, and nothing is painted until the rebuild is complete.
         void ApplyTheme()
         {
             if (closing) return;
-            int scroll = pageSettings != null ? -pageSettings.AutoScrollPosition.Y : 0;
-            Theme.Apply(ResolveTheme());
-            ApplyWindowChrome();
-            BuildUi();
-            ApplyTexts();
-            if (scroll > 0) pageSettings.AutoScrollPosition = new Point(0, scroll);
+            int setScroll = pageSettings != null ? -pageSettings.AutoScrollPosition.Y : 0;
+            int helpScroll = pageHelp != null ? -pageHelp.AutoScrollPosition.Y : 0;
+
+            bool redrawOff = IsHandleCreated && Visible;
+            if (redrawOff) Native.SendMessage(Handle, 0x000B, IntPtr.Zero, IntPtr.Zero);   // WM_SETREDRAW off
+            rebuilding = true;   // new pages are created with ScrollPanel.Hold set
+            try
+            {
+                Theme.Apply(ResolveTheme());
+                ApplyWindowChrome();
+                BuildUi();
+                ApplyTexts();
+                RestoreScroll(setScroll, helpScroll);
+                // give focus a definite home in the rebuilt UI, so WinForms doesn't pick (and scroll to) the first row
+                ActiveControl = page == 1 ? (Control)selTheme : page == 2 ? navHelp : navStream;
+            }
+            finally
+            {
+                rebuilding = false;
+                if (redrawOff)
+                {
+                    Native.SendMessage(Handle, 0x000B, (IntPtr)1, IntPtr.Zero);              // WM_SETREDRAW on
+                    Refresh();
+                }
+            }
+            // once more after the message queue settles (handles created, focus restored), then let go
+            BeginInvoke(new Action(() =>
+            {
+                RestoreScroll(setScroll, helpScroll);
+                foreach (Panel p in new[] { pageSettings, pageHelp })
+                {
+                    var sp = p as ScrollPanel;
+                    if (sp != null) sp.Hold = false;
+                }
+            }));
+        }
+
+        void RestoreScroll(int setScroll, int helpScroll)
+        {
+            if (closing) return;
+            if (pageSettings != null && setScroll > 0 && -pageSettings.AutoScrollPosition.Y != setScroll)
+                pageSettings.AutoScrollPosition = new Point(0, setScroll);
+            if (pageHelp != null && helpScroll > 0 && -pageHelp.AutoScrollPosition.Y != helpScroll)
+                pageHelp.AutoScrollPosition = new Point(0, helpScroll);
         }
 
         void ApplyWindowChrome()
@@ -748,7 +788,7 @@ namespace IStream
 
         Panel MkPage(bool scroll)
         {
-            var p = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Bg, AutoScroll = scroll, Visible = false };
+            var p = new ScrollPanel { Dock = DockStyle.Fill, BackColor = Theme.Bg, AutoScroll = scroll, Visible = false, Hold = rebuilding };
             if (scroll) p.HandleCreated += delegate
             {
                 if (Theme.IsDark) Native.DarkScrollbars(p.Handle);
@@ -1670,6 +1710,16 @@ namespace IStream
             Snap("3-settings.png");
             pageSettings.AutoScrollPosition = new Point(0, D(2000));
             Snap("4-settings-bottom.png");
+
+            // theme switch while scrolled down with the Appearance dropdown focused: the page must stay put
+            int before = -pageSettings.AutoScrollPosition.Y;
+            selTheme.Focus();
+            bool focusedBefore = selTheme.Focused;
+            Program.ThemeOverride = Theme.Variant == Theme.Light ? 2 : 1;
+            ApplyTheme();
+            Snap("4b-settings-after-theme.png");
+            File.WriteAllText(Path.Combine(shotDir, "scroll.txt"),
+                "before=" + before + " after=" + (-pageSettings.AutoScrollPosition.Y) + " focusedBefore=" + focusedBefore + " focusedAfter=" + selTheme.Focused + " active=" + (ActiveControl == null ? "null" : ActiveControl.GetType().Name));
             ShowPage(2);
             Snap("5-help.png");
             Close();
