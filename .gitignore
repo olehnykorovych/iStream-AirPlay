@@ -1,0 +1,5 @@
+# engine binaries are downloaded by scripts/get-engine.ps1 and shipped in releases
+engine/
+build/
+dist/
+*.exe
